@@ -73,7 +73,9 @@ describe("api", () => {
     expect((await call("/api/sessions/..%2F..%2Fetc", { method: "PUT", body: "{}" })).status).toBe(400);
     expect((await call("/api/sessions/sess-000001/files/..%2Fsession.json", { method: "PUT", body: "x" })).status).toBe(400);
     expect((await call("/api/sessions/sess-000001/files/session.json", { method: "PUT", body: "x" })).status).toBe(400);
-    expect((await call("/%2e%2e/%2e%2e/etc/passwd")).status).toBeGreaterThanOrEqual(400);
+    // URL normalisation keeps it inside the app: it gets the SPA shell, never the real file
+    expect(await (await call("/%2e%2e/%2e%2e/etc/passwd")).text()).not.toContain("root:");
+    expect(await (await call("/..%2F..%2Fpackage.json")).text()).not.toContain("workspaces");
   });
 
   test("file upload and download", async () => {
