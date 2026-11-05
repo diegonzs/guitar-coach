@@ -1,0 +1,27 @@
+/** Writes a WAV with a plucked Am arpeggio (p-i-m-a-m-i, eighths at 60 BPM) for browser tests. */
+import { pluck, mixInto, midiToFreq } from "../../packages/core/src/index.ts";
+const SR = 48000;
+const out = process.argv[2] ?? "/tmp/gc-arpeggio.wav";
+const seq = [45, 57, 60, 64, 60, 57];
+const step = 0.5;
+const reps = 8;
+const sig = new Float32Array(Math.round(SR * (reps * seq.length * step + 1)));
+let k = 0;
+for (let r = 0; r < reps; r++) for (const m of seq) mixInto(sig, pluck(midiToFreq(m), SR, 2, { seed: ++k, gain: 0.35 }), Math.round(SR * (0.2 + k * step)));
+const data = new Int16Array(sig.length);
+for (let i = 0; i < sig.length; i++) data[i] = Math.max(-1, Math.min(1, sig[i]!)) * 32767;
+const header = Buffer.alloc(44);
+header.write("RIFF", 0);
+header.writeUInt32LE(36 + data.byteLength, 4);
+header.write("WAVEfmt ", 8);
+header.writeUInt32LE(16, 16);
+header.writeUInt16LE(1, 20);
+header.writeUInt16LE(1, 22);
+header.writeUInt32LE(SR, 24);
+header.writeUInt32LE(SR * 2, 28);
+header.writeUInt16LE(2, 32);
+header.writeUInt16LE(16, 34);
+header.write("data", 36);
+header.writeUInt32LE(data.byteLength, 40);
+await Bun.write(out, Buffer.concat([header, Buffer.from(data.buffer)]));
+console.log(out);

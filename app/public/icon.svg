@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="112" fill="#1d1915"/>
+  <circle cx="256" cy="256" r="196" fill="#e3a14f"/>
+  <text x="256" y="338" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="300" fill="#2a1d10">g</text>
+  <g stroke="#2a1d10" stroke-opacity=".35" stroke-width="5">
+    <line x1="132" y1="140" x2="132" y2="372"/><line x1="380" y1="140" x2="380" y2="372"/>
+  </g>
+</svg>

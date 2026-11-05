@@ -13,5 +13,8 @@
     "schema": "bun packages/core/scripts/gen-schema.ts",
     "test": "bun test packages server",
     "typecheck": "bun run --filter '*' typecheck"
+  },
+  "devDependencies": {
+    "playwright-core": "^1.64.1"
   }
 }

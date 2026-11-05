@@ -3,7 +3,7 @@ import { OnsetDetector } from "../src/dsp/onsets.ts";
 import { detectPitch } from "../src/dsp/pitch.ts";
 import { pluck, mixInto } from "../src/dsp/synth.ts";
 import { midiToFreq, centsOff } from "../src/music.ts";
-import { pitchMatches } from "../src/scoring.ts";
+import { pitchMatches, isClickEcho } from "../src/scoring.ts";
 
 const SR = 48000;
 
@@ -94,5 +94,37 @@ describe("evaluation on synthetic audio", () => {
     expect(on).toHaveLength(6);
     const ok = on.map((o, i) => pitchMatches({ t: 0, salience: o.salience, present: o.present, midi: o.midi }, [expected[i]!]));
     expect(ok).toEqual([true, true, false, true, true, true]);
+  });
+});
+
+describe("metronome click rejection", () => {
+  test("click echoes away from expected notes are discarded; plucks are kept", () => {
+    const sig = noise(SR * 2, 0.001);
+    const clickTimes = [0.3, 0.8, 1.3];
+    for (const at of clickTimes) {
+      const n = Math.round(0.025 * SR);
+      const c = new Float32Array(n);
+      for (let i = 0; i < n; i++) c[i] = Math.sin((2 * Math.PI * 3000 * i) / SR) * Math.exp(-i / (0.006 * SR)) * 0.3;
+      mixInto(sig, c, Math.round(at * SR));
+    }
+    mixInto(sig, pluck(midiToFreq(57), SR, 0.8, { seed: 9 }), Math.round(0.8 * SR)); // on the beat
+    const expected = [{ rep: 0, event: 0, t: 0.8, midis: [57], window: 0.2 }];
+    const on = run(sig).filter((o) => !isClickEcho(o.frame / SR, clickTimes, expected));
+    expect(on).toHaveLength(1);
+    expect(on[0]!.midi).toBe(57);
+  });
+});
+
+describe("octave mistakes over a ringing bass", () => {
+  test("playing A3 while A2 rings is not accepted as A2", () => {
+    const sig = noise(SR * 2, 0.001);
+    mixInto(sig, pluck(midiToFreq(45), SR, 2, { seed: 3, decay: 0.999 }), Math.round(0.1 * SR)); // A2 ringing
+    mixInto(sig, pluck(midiToFreq(57), SR, 1.5, { seed: 8 }), Math.round(0.9 * SR)); // wrong: A3
+    mixInto(sig, pluck(midiToFreq(45), SR, 1.5, { seed: 11 }), Math.round(1.5 * SR)); // right: A2 again
+    const on = run(sig);
+    expect(on).toHaveLength(3);
+    const asOnset = (o: (typeof on)[number]) => ({ t: 0, salience: o.salience, present: o.present, midi: o.midi });
+    expect(pitchMatches(asOnset(on[1]!), [45])).toBe(false);
+    expect(pitchMatches(asOnset(on[2]!), [45])).toBe(true);
   });
 });

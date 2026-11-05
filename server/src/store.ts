@@ -100,15 +100,19 @@ export class Store {
     const tmp = target + ".part";
     const writer = Bun.file(tmp).writer();
     let size = 0;
+    const reader = body.getReader();
     try {
-      for await (const chunk of body as unknown as AsyncIterable<Uint8Array>) {
-        size += chunk.byteLength;
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        size += value.byteLength;
         if (size > maxBytes) throw new StoreError(413, "Archivo demasiado grande");
-        writer.write(chunk);
+        writer.write(value);
       }
       await writer.end();
       await rename(tmp, target);
     } catch (e) {
+      await reader.cancel().catch(() => {});
       await Promise.resolve(writer.end()).catch(() => {});
       await rm(tmp, { force: true });
       throw e;

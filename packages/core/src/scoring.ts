@@ -93,7 +93,9 @@ export function pitchMatches(o: Onset, midis: number[]): boolean {
     if (o.midi === m) return true;
     // The estimator may land on a harmonic of the expected note when the string was
     // re-plucked while ringing; accept it if the expected note is clearly sounding.
-    if (o.midi !== null && [12, 19, 24].includes(o.midi - m) && presentRatio(o, m) >= 0.5) return true;
+    // The expected note must also carry new energy, otherwise a wrong note played an
+    // octave above a still-ringing expected note would be accepted.
+    if (o.midi !== null && [12, 19, 24].includes(o.midi - m) && presentRatio(o, m) >= 0.5 && salienceOf(o, m) >= 0.6 * max) return true;
     return salienceOf(o, m) >= 0.8 * max;
   }
   return midis.every((m) => salienceOf(o, m) >= 0.3 * max || presentRatio(o, m) >= 0.5);
@@ -195,6 +197,17 @@ export class TimelineMatcher {
       this.onRep?.(rep);
     }
   }
+}
+
+/**
+ * Metronome clicks leak from the speaker into the mic. An onset that arrives right
+ * when a click does (times already latency-compensated) and isn't close to any
+ * expected note is almost certainly the click.
+ */
+export function isClickEcho(t: number, clickTimes: number[], expected: ExpectedEvent[], tolerance = 0.035): boolean {
+  const nearClick = clickTimes.some((c) => Math.abs(c - t) <= tolerance);
+  if (!nearClick) return false;
+  return !expected.some((e) => Math.abs(e.t - t) <= Math.max(0.06, e.window * 0.6));
 }
 
 export function summarizeRep(index: number, notes: NoteResult[], toleranceMs: number): RepResult {
