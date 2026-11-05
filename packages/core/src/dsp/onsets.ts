@@ -21,9 +21,6 @@ export interface DetectedOnset {
   present: Float32Array;
   /** Loudness of the attack (RMS after the onset). */
   level: number;
-  /** Spectral flux per bin above 1.6 kHz ÷ per bin in the guitar range (60–1.6 kHz)
-   *  at the attack. Metronome clicks leaking into the mic score far above plucks. */
-  hfRatio: number;
 }
 
 export interface OnsetDetectorOptions {
@@ -58,8 +55,7 @@ export class OnsetDetector {
   private curSpec = new Float32Array(FLUX_N / 2 + 1);
   private loBin: number;
   private hiBin: number;
-  private fluxHist: { frame: number; flux: number; rms: number; lo: number; hi: number }[] = [];
-  private splitBin: number;
+  private fluxHist: { frame: number; flux: number; rms: number }[] = [];
   private lastOnsetFrame = -Infinity;
   private lastOnsetFlux = 0;
   private noiseFloor = 0.002;
@@ -69,7 +65,7 @@ export class OnsetDetector {
   private specPre = new Float32Array(PITCH_FFT / 2 + 1);
   private specPost = new Float32Array(PITCH_FFT / 2 + 1);
   private specDiff = new Float32Array(PITCH_FFT / 2 + 1);
-  private pendingPitch: { frame: number; level: number; hfRatio: number }[] = [];
+  private pendingPitch: { frame: number; level: number }[] = [];
   private scratch = new Float32Array(PITCH_N);
   private scratchFlux = new Float32Array(FLUX_N);
   private preDelay: number;
@@ -85,7 +81,6 @@ export class OnsetDetector {
     this.nextHopAt = FLUX_N;
     this.loBin = Math.max(1, Math.floor((60 * FLUX_N) / sampleRate));
     this.hiBin = Math.min(FLUX_N / 2, Math.ceil((8000 * FLUX_N) / sampleRate));
-    this.splitBin = Math.round((1600 * FLUX_N) / sampleRate);
     this.preDelay = Math.round(0.006 * sampleRate);
     this.postDelay = Math.round(0.012 * sampleRate);
   }
@@ -109,7 +104,7 @@ export class OnsetDetector {
     // pitch estimation for onsets whose post-window is now complete
     while (this.pendingPitch.length && this.written >= this.pendingPitch[0]!.frame + this.postDelay + PITCH_N) {
       const p = this.pendingPitch.shift()!;
-      out.push(this.estimate(p.frame, p.level, p.hfRatio));
+      out.push(this.estimate(p.frame, p.level));
     }
     return out;
   }
@@ -126,24 +121,19 @@ export class OnsetDetector {
     for (let i = FLUX_N - this.hop; i < FLUX_N; i++) rms += frame[i]! * frame[i]!;
     rms = Math.sqrt(rms / this.hop);
     this.fluxFft.magnitudes(frame, this.fluxWin, this.curSpec);
-    let lo = 0;
-    let hi = 0;
+    let flux = 0;
     for (let k = this.loBin; k <= this.hiBin; k++) {
       const c = Math.log1p(100 * this.curSpec[k]!);
       const d = c - this.prevSpec[k]!;
-      if (d > 0) {
-        if (k < this.splitBin) lo += d;
-        else hi += d;
-      }
+      if (d > 0) flux += d;
       this.prevSpec[k] = c;
     }
-    const flux = lo + hi;
     // slow noise floor follower (fast down, slow up)
     this.noiseFloor = rms < this.noiseFloor ? 0.9 * this.noiseFloor + 0.1 * rms : this.noiseFloor * 1.0015;
     this.noiseFloor = Math.max(this.noiseFloor, 0.0005);
 
     // the hop's centre is roughly where the energy changed
-    this.fluxHist.push({ frame: end - this.hop, flux, rms, lo, hi });
+    this.fluxHist.push({ frame: end - this.hop, flux, rms });
     if (this.fluxHist.length > 64) this.fluxHist.shift();
     this.pick();
   }
@@ -172,14 +162,10 @@ export class OnsetDetector {
     if (c.frame - this.lastOnsetFrame < this.minGapFrames) return;
     this.lastOnsetFrame = c.frame;
     this.lastOnsetFlux = c.flux;
-    // Per-bin flux is normalised by bandwidth so a pluck (energy everywhere) scores ~1
-    // and a metronome click (energy only up high) scores ≫ 1.
-    const loN = (h[i]!.lo + h[i + 1]!.lo) / Math.max(1, this.splitBin - this.loBin);
-    const hiN = (h[i]!.hi + h[i + 1]!.hi) / Math.max(1, this.hiBin - this.splitBin + 1);
-    this.pendingPitch.push({ frame: c.frame, level: after, hfRatio: loN > 0 ? hiN / loN : 99 });
+    this.pendingPitch.push({ frame: c.frame, level: after });
   }
 
-  private estimate(frame: number, level: number, hfRatio: number): DetectedOnset {
+  private estimate(frame: number, level: number): DetectedOnset {
     const pre = this.read(frame - this.preDelay - PITCH_N, PITCH_N, this.scratch);
     this.pitchFft.magnitudes(pre, this.pitchWin, this.specPre);
     const post = this.read(frame + this.postDelay, PITCH_N, this.scratch);
@@ -227,7 +213,7 @@ export class OnsetDetector {
     } else if (midi !== null && !useDiff) {
       midi = present.midi;
     }
-    return { frame, midi, salience: fresh.salience, present: present.salience, level, hfRatio };
+    return { frame, midi, salience: fresh.salience, present: present.salience, level };
   }
 }
 

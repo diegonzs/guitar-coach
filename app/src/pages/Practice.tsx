@@ -348,7 +348,7 @@ export default function Practice() {
                   <div className="text-xs text-muted-foreground">
                     Escanéalo con el iPhone (misma red o tailnet) y apunta la cámara a tu mano derecha.
                     <div className="mt-2 font-medium text-foreground">
-                      Estado: {remoteStatus === "connected" ? "conectado ✓" : remoteStatus === "waiting" ? "esperando al iPhone…" : remoteStatus === "connecting" ? "conectando…" : "desconectado"}
+                      Estado: {remoteStatus === "connected" ? "conectado ✓" : remoteStatus === "waiting" ? "esperando al iPhone…" : remoteStatus === "connecting" ? "conectando…" : remoteStatus === "replaced" ? "otra pestaña está usando esta sala" : "desconectado"}
                     </div>
                   </div>
                 </div>

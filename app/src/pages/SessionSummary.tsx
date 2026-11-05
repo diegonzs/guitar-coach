@@ -71,9 +71,13 @@ export default function SessionSummary() {
             <ChevronLeft className="size-5" />
           </Link>
         </Button>
-        {row.synced ? (
+        {row.synced === 1 ? (
           <Badge className="bg-success/15 text-success">
             <CircleCheck className="size-3" /> En tu laptop
+          </Badge>
+        ) : row.synced === 2 ? (
+          <Badge className="bg-destructive/15 text-destructive" title={row.syncError}>
+            <CloudOff className="size-3" /> El servidor la rechazó
           </Badge>
         ) : (
           <Badge className="bg-warning/15 text-warning">
@@ -222,6 +226,7 @@ export default function SessionSummary() {
           value={note ?? s.userNote ?? ""}
           onChange={(e) => setNote(e.target.value)}
           onBlur={saveNote}
+          maxLength={4000}
           className="min-h-20"
         />
       </div>

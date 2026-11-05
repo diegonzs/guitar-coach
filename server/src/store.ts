@@ -24,6 +24,8 @@ export class StoreError extends Error {
 
 export class Store {
   private list: SessionListItem[] | null = null;
+  /** Bumped on every write so a slow scan never caches a stale list. */
+  private generation = 0;
 
   constructor(readonly dataDir: string) {}
 
@@ -54,6 +56,7 @@ export class Store {
 
   async listSessions(): Promise<SessionListItem[]> {
     if (this.list) return this.list;
+    const gen = this.generation;
     const out: SessionListItem[] = [];
     let dirs: string[] = [];
     try {
@@ -67,7 +70,7 @@ export class Store {
       if (s) out.push(toListItem(s));
     }
     out.sort((a, b) => b.startedAt.localeCompare(a.startedAt));
-    this.list = out;
+    if (gen === this.generation) this.list = out;
     return out;
   }
 
@@ -89,6 +92,7 @@ export class Store {
     if (parsed.data.id !== id) throw new StoreError(400, "El id no coincide con la URL");
     await mkdir(dir, { recursive: true });
     await atomicWrite(join(dir, "session.json"), JSON.stringify(parsed.data, null, 2));
+    this.generation++;
     this.list = null;
     return parsed.data;
   }

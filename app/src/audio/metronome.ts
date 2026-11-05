@@ -12,6 +12,7 @@ export class Metronome {
   private index = 0;
   private gain: GainNode;
   readonly clicks: number[] = [];
+  private pendingBeats = new Set<ReturnType<typeof setTimeout>>();
   onBeat?: (b: Beat) => void;
 
   constructor(
@@ -44,10 +45,13 @@ export class Metronome {
   stop() {
     if (this.timer) clearInterval(this.timer);
     this.timer = null;
+    for (const t of this.pendingBeats) clearTimeout(t);
+    this.pendingBeats.clear();
   }
 
   dispose() {
     this.stop();
+    this.onBeat = undefined;
     this.gain.disconnect();
   }
 
@@ -59,7 +63,11 @@ export class Metronome {
       if (this.clicks.length > 4000) this.clicks.splice(0, 1000);
       const beat: Beat = { index: this.index, time: this.next, accent };
       const delay = Math.max(0, (this.next - this.ctx.currentTime) * 1000);
-      setTimeout(() => this.onBeat?.(beat), delay);
+      const id = setTimeout(() => {
+        this.pendingBeats.delete(id);
+        this.onBeat?.(beat);
+      }, delay);
+      this.pendingBeats.add(id);
       this.next += this.interval;
       this.index++;
     }

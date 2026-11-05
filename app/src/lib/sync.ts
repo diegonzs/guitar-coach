@@ -8,7 +8,7 @@
 import { useSyncExternalStore } from "react";
 import type { Profile, SessionListItem } from "@guitar-coach/core";
 import { db, getKV, setKV, type CurriculumPayload } from "./db";
-import { getJSON, putBlob, putJSON } from "./api";
+import { HttpError, getJSON, putBlob, putJSON } from "./api";
 import { getSettings } from "./settings";
 
 export interface SyncState {
@@ -16,12 +16,14 @@ export interface SyncState {
   syncing: boolean;
   lastSync: string | null;
   pending: number;
+  /** Sessions the server rejected (e.g. too large); they are skipped, not retried forever. */
+  failed: number;
   error: string | null;
   /** True when the server is serving the example curriculum. */
   exampleCurriculum: boolean;
 }
 
-let state: SyncState = { online: navigator.onLine, syncing: false, lastSync: null, pending: 0, error: null, exampleCurriculum: false };
+let state: SyncState = { online: navigator.onLine, syncing: false, lastSync: null, pending: 0, failed: 0, error: null, exampleCurriculum: false };
 const listeners = new Set<() => void>();
 const set = (patch: Partial<SyncState>) => {
   state = { ...state, ...patch };
@@ -40,14 +42,33 @@ export function useSync(): SyncState {
 
 async function countPending() {
   const n = await db.sessions.where("synced").equals(0).count();
-  set({ pending: n });
+  const failed = await db.sessions.where("synced").equals(2).count();
+  set({ pending: n, failed });
   return n;
 }
 
-let running: Promise<void> | null = null;
+const statusOf = (e: unknown) => (e instanceof HttpError ? e.status : 0);
+/** 4xx other than timeouts/rate limits: retrying won't help. */
+const isPermanent = (e: unknown) => {
+  const st = statusOf(e);
+  return st >= 400 && st < 500 && st !== 408 && st !== 429;
+};
 
+let running: Promise<void> | null = null;
+let again = false;
+
+/** Runs a sync; if one is already running, another pass is queued after it. */
 export function syncNow(): Promise<void> {
-  if (!running) running = doSync().finally(() => (running = null));
+  if (running) {
+    again = true;
+    return running;
+  }
+  running = (async () => {
+    do {
+      again = false;
+      await doSync();
+    } while (again);
+  })().finally(() => (running = null));
   return running;
 }
 
@@ -63,28 +84,47 @@ async function doSync() {
       return;
     }
 
-    // 1) push pending sessions and their media
+    // 1) push pending sessions and their media (one bad session never blocks the rest)
     const pending = await db.sessions.where("synced").equals(0).toArray();
     for (const s of pending) {
-      await putJSON(`/api/sessions/${encodeURIComponent(s.id)}`, s.data);
-      const files = await db.files.where("sessionId").equals(s.id).toArray();
-      for (const f of files) {
-        if (f.uploaded) continue;
-        await putBlob(`/api/sessions/${encodeURIComponent(s.id)}/files/${encodeURIComponent(f.name)}`, f.blob);
-        await db.files.update([f.sessionId, f.name], { uploaded: 1, uploadedAt: new Date().toISOString() });
+      try {
+        await putJSON(`/api/sessions/${encodeURIComponent(s.id)}`, s.data);
+        const files = await db.files.where("sessionId").equals(s.id).toArray();
+        for (const f of files) {
+          if (f.uploaded) continue;
+          await putBlob(`/api/sessions/${encodeURIComponent(s.id)}/files/${encodeURIComponent(f.name)}`, f.blob);
+          await db.files.update([f.sessionId, f.name], { uploaded: 1, uploadedAt: new Date().toISOString() });
+        }
+        // only mark as synced if it wasn't edited while we were uploading
+        await db.transaction("rw", db.sessions, async () => {
+          const cur = await db.sessions.get(s.id);
+          if (cur && (cur.rev ?? 0) === (s.rev ?? 0)) await db.sessions.update(s.id, { synced: 1, syncError: undefined });
+          else again = true;
+        });
+      } catch (e) {
+        if (!isPermanent(e)) throw e; // offline / server down: try again later
+        await db.sessions.update(s.id, { synced: 2, syncError: (e as Error).message.slice(0, 300) });
       }
-      await db.sessions.update(s.id, { synced: 1 });
     }
 
-    // 2) profile (last write wins)
+    // 2) profile (last write wins; never clear a newer local edit)
     const local = await getKV<Profile>("profile");
-    if (local && (await getKV<boolean>("profileDirty"))) {
+    const dirty = (await getKV<number | boolean>("profileDirty")) || 0;
+    if (local && dirty) {
       const stored = (await putJSON("/api/profile", local)) as Profile;
-      await setKV("profile", stored);
-      await setKV("profileDirty", false);
+      await db.transaction("rw", db.kv, async () => {
+        if (((await getKV<number | boolean>("profileDirty")) || 0) === dirty) {
+          await setKV("profile", stored);
+          await setKV("profileDirty", 0);
+        } else again = true;
+      });
     } else {
       const remote = (await getJSON<Profile | null>("/api/profile")).data;
-      if (remote && (!local || remote.updatedAt > local.updatedAt)) await setKV("profile", remote);
+      if (remote)
+        await db.transaction("rw", db.kv, async () => {
+          const cur = await getKV<Profile>("profile");
+          if (!((await getKV<number | boolean>("profileDirty")) || 0) && (!cur || remote.updatedAt > cur.updatedAt)) await setKV("profile", remote);
+        });
     }
 
     // 3) curriculum

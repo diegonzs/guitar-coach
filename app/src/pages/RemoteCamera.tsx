@@ -11,6 +11,7 @@ const LABEL: Record<RtcStatus, string> = {
   waiting: "Esperando a la laptop… abre “Práctica con cámara” y activa la 2ª cámara",
   connected: "Enviando video a la laptop ✓",
   disconnected: "Desconectado, reintentando…",
+  replaced: "Otro teléfono tomó esta cámara. Recarga para volver a conectar.",
   error: "Error",
 };
 

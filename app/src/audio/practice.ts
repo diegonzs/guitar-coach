@@ -223,6 +223,7 @@ export class PracticeRun {
       this.firstBeat = t0 + countInBeats * beatSec;
       this.metronome = new Metronome(ctx, this.cfg.bpm, bpb, settings.metronomeVolume);
       this.metronome.onBeat = (b) => {
+        if (this.state.phase === "done" || this.state.phase === "finishing" || this.state.phase === "error") return;
         const remaining = countInBeats - b.index;
         this.set({ beatInBar: b.index % bpb, countIn: remaining > 0 ? remaining : null, phase: remaining > 0 ? "countin" : this.state.phase === "countin" || this.state.phase === "starting" ? "running" : this.state.phase });
       };
@@ -422,10 +423,10 @@ export class PracticeRun {
     this.set({ posture: smoothed, postureWarnings: warnings, feedback: warnings.length && this.state.feedback === "good" ? "warn" : this.state.feedback });
     for (const e of entered) {
       const msg = MESSAGES[e.check](e.value);
-      this.postureEvents.push({ t: round3(t), check: e.check, value: Math.round(e.value * 100) / 100, message: msg.title });
+      const ev: Session["posture"][number] = { t: round3(t), check: e.check, value: Math.round(e.value * 100) / 100, message: msg.title };
+      this.postureEvents.push(ev);
       void this.captureFrame(t, msg.title).then((name) => {
-        const ev = this.postureEvents.at(-1);
-        if (name && ev) ev.frame = name;
+        if (name) ev.frame = name;
       });
       const last = this.cueCooldown.get(e.check);
       if (last !== undefined && t - last < 20) continue;

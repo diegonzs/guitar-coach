@@ -10,7 +10,10 @@ function socket(room: string, role: "camera" | "viewer") {
   return new WebSocket(`${proto}://${location.host}/ws/signal?room=${encodeURIComponent(room)}&role=${role}`);
 }
 
-export type RtcStatus = "connecting" | "waiting" | "connected" | "disconnected" | "error";
+export type RtcStatus = "connecting" | "waiting" | "connected" | "disconnected" | "replaced" | "error";
+
+/** Close code the server uses when another device with the same role joins the room. */
+const REPLACED = 4000;
 
 /** Laptop side: receives the phone's video. */
 export class RemoteCameraViewer {
@@ -28,7 +31,13 @@ export class RemoteCameraViewer {
     this.onStatus("connecting");
     this.ws = socket(this.room, "viewer");
     this.ws.onopen = () => this.onStatus("waiting");
-    this.ws.onclose = () => {
+    this.ws.onclose = (e) => {
+      if (e.code === REPLACED) {
+        // another device took this role: don't fight over the room
+        this.closed = true;
+        this.onStatus("replaced");
+        return;
+      }
       if (!this.closed) {
         this.onStatus("disconnected");
         setTimeout(() => !this.closed && this.start(), 3000);
@@ -91,7 +100,13 @@ export class RemoteCameraSender {
     this.onStatus("connecting");
     this.ws = socket(this.room, "camera");
     this.ws.onopen = () => this.onStatus("waiting");
-    this.ws.onclose = () => {
+    this.ws.onclose = (e) => {
+      if (e.code === REPLACED) {
+        // another device took this role: don't fight over the room
+        this.closed = true;
+        this.onStatus("replaced");
+        return;
+      }
       if (!this.closed) {
         this.onStatus("disconnected");
         setTimeout(() => !this.closed && this.start(), 3000);

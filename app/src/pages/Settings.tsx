@@ -78,7 +78,7 @@ export default function SettingsPage() {
         <Row title="Servidor (tu laptop)" detail={sync.online ? (sync.lastSync ? `Última sincronización ${new Date(sync.lastSync).toLocaleTimeString()}` : "Conectado") : "No disponible: tus sesiones se guardan aquí y se enviarán después"}>
           <SyncBadge />
         </Row>
-        <Row title="Pendientes de enviar" detail={sync.error ? `Error: ${sync.error}` : undefined}>
+        <Row title="Pendientes de enviar" detail={[sync.error && `Error: ${sync.error}`, sync.failed > 0 && `${sync.failed} sesión(es) rechazadas por el servidor (demasiado grandes o inválidas)`].filter(Boolean).join(" · ") || undefined}>
           <Button variant="secondary" size="sm" onClick={() => syncNow()} disabled={sync.syncing}>
             <RefreshCw className={sync.syncing ? "animate-spin" : ""} />
             {sync.pending} · Sincronizar

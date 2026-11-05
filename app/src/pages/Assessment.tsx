@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { Link, useLocation } from "wouter";
 import { toast } from "sonner";
 import { ChevronLeft, CircleCheck, CircleX, ClipboardCheck, Mic, SkipForward, Square } from "lucide-react";
@@ -39,6 +39,8 @@ export default function Assessment() {
   const [startedAt] = useState(() => new Date());
   const [result, setResult] = useState<AssessmentResult | null>(null);
   const [saving, setSaving] = useState(false);
+  /** The run whose result we still accept; stale runs (skipped, cancelled) are ignored. */
+  const currentRun = useRef<PracticeRun | null>(null);
 
   const task: AssessmentTask | undefined = a?.exercises[idx];
   const empty = useMemo(() => new PracticeRun({ kind: "assessment", mode: "audio", bpm: 60 }), []);
@@ -69,6 +71,7 @@ export default function Assessment() {
   }
 
   function advance(list: TaskOutcome[]) {
+    currentRun.current = null;
     setLast(null);
     setRun(null);
     if (consecutiveFails(list) >= a!.stopAfterFailures || idx + 1 >= a!.exercises.length) {
@@ -89,7 +92,10 @@ export default function Assessment() {
       exercise: task,
       maxReps: task.reps,
       onAutoFinish: async () => {
+        if (currentRun.current !== r) return;
         const { session, files: f } = await r.finish();
+        if (currentRun.current !== r) return;
+        currentRun.current = null;
         const passed = taskPassed(task, session.summary);
         record({ id: task.id, status: passed ? "passed" : "failed", accuracy: session.summary.accuracy, meanAbsDeviationMs: session.summary.meanAbsDeviationMs, bpm: task.tempo.start });
         const rec = f.find((x) => x.name.startsWith("grabacion."));
@@ -97,6 +103,7 @@ export default function Assessment() {
         setRun(null);
       },
     });
+    currentRun.current = r;
     setRun(r);
     await r.start();
   }
@@ -290,7 +297,7 @@ export default function Assessment() {
 
   // ------------------------------------------------------------ tasks
   if (!task) return null;
-  const running = !!run && (st.phase === "countin" || st.phase === "running" || st.phase === "starting");
+  const running = !!run && (st.phase === "countin" || st.phase === "running" || st.phase === "starting" || st.phase === "finishing");
   const bpb = beatsPerBar(task.music, (task.beatUnit ?? 4) as 4 | 8);
   return (
     <div className="mx-auto flex min-h-dvh max-w-xl flex-col gap-4 px-4 pt-safe pb-safe">
@@ -339,7 +346,15 @@ export default function Assessment() {
 
       <div className="mt-auto mb-2 grid gap-2">
         {running ? (
-          <Button variant="destructive" className="h-12" onClick={() => run?.cancel().then(() => setRun(null))}>
+          <Button
+            variant="destructive"
+            className="h-12"
+            disabled={st.phase === "finishing"}
+            onClick={() => {
+              currentRun.current = null;
+              void run?.cancel().then(() => setRun(null));
+            }}
+          >
             <Square className="size-4 fill-current" /> Cancelar prueba
           </Button>
         ) : last ? (
