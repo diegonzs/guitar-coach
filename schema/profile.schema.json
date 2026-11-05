@@ -1,0 +1,141 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "formatVersion": {
+      "default": 1,
+      "type": "number",
+      "const": 1
+    },
+    "updatedAt": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string",
+      "maxLength": 80
+    },
+    "assessment": {
+      "type": "object",
+      "properties": {
+        "assessmentId": {
+          "type": "string"
+        },
+        "answers": {
+          "default": {},
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "tasks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              },
+              "level": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "skill": {
+                "type": "string"
+              },
+              "bpm": {
+                "type": "number"
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "passed",
+                  "failed",
+                  "skipped",
+                  "not-reached"
+                ]
+              },
+              "accuracy": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "meanAbsDeviationMs": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "title",
+              "level",
+              "skill",
+              "bpm",
+              "status",
+              "accuracy",
+              "meanAbsDeviationMs"
+            ]
+          }
+        },
+        "level": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "recommendedLessonId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "skills": {
+          "default": {},
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "type": "number"
+          }
+        },
+        "sessionId": {
+          "type": "string"
+        },
+        "date": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "assessmentId",
+        "tasks",
+        "level",
+        "recommendedLessonId",
+        "sessionId",
+        "date"
+      ]
+    },
+    "currentLessonId": {
+      "default": null,
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "updatedAt"
+  ],
+  "title": "Perfil del estudiante (data/profile.json)"
+}

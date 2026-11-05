@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
+    },
+    "date": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {}
+      ]
+    },
+    "lesson": {
+      "type": "string",
+      "maxLength": 64,
+      "pattern": "^[a-z0-9][a-z0-9-]*$"
+    },
+    "session": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "title",
+    "date"
+  ],
+  "title": "Frontmatter de una nota del instructor (notes/*.md)"
+}

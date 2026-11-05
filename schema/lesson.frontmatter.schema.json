@@ -1,0 +1,188 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "type": {
+      "default": "lesson",
+      "type": "string",
+      "const": "lesson"
+    },
+    "formatVersion": {
+      "default": 1,
+      "type": "number",
+      "const": 1
+    },
+    "id": {
+      "type": "string",
+      "maxLength": 64,
+      "pattern": "^[a-z0-9][a-z0-9-]*$"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
+    },
+    "unit": {
+      "description": "id de la unidad en course.yaml",
+      "type": "string",
+      "maxLength": 64,
+      "pattern": "^[a-z0-9][a-z0-9-]*$"
+    },
+    "level": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 5
+    },
+    "order": {
+      "default": 0,
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "summary": {
+      "type": "string",
+      "maxLength": 400
+    },
+    "goals": {
+      "default": [],
+      "maxItems": 10,
+      "type": "array",
+      "items": {
+        "type": "string",
+        "maxLength": 200
+      }
+    },
+    "tags": {
+      "default": [],
+      "maxItems": 20,
+      "type": "array",
+      "items": {
+        "type": "string",
+        "maxLength": 40
+      }
+    },
+    "estimatedMinutes": {
+      "default": 15,
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 120
+    },
+    "exercises": {
+      "minItems": 1,
+      "maxItems": 12,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "maxLength": 64,
+            "pattern": "^[a-z0-9][a-z0-9-]*$"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "instructions": {
+            "description": "Indicación corta que se muestra mientras se practica",
+            "type": "string",
+            "maxLength": 2000
+          },
+          "fingering": {
+            "description": "Digitación de la mano derecha, un símbolo por golpe (p i m a c, acordes con +, \"-\" sin indicar). Si es más corta que el ejercicio, se repite.",
+            "type": "string"
+          },
+          "tempo": {
+            "type": "object",
+            "properties": {
+              "start": {
+                "type": "integer",
+                "minimum": 20,
+                "maximum": 300,
+                "description": "BPM con el que se empieza"
+              },
+              "target": {
+                "description": "BPM objetivo; al alcanzarlo el ejercicio se considera dominado",
+                "type": "integer",
+                "minimum": 20,
+                "maximum": 300
+              },
+              "step": {
+                "default": 5,
+                "description": "Cuántos BPM se suben cada vez que se desbloquea el siguiente tempo",
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 40
+              }
+            },
+            "required": [
+              "start"
+            ]
+          },
+          "beatUnit": {
+            "default": 4,
+            "description": "Qué figura cuenta como un pulso del metrónomo",
+            "anyOf": [
+              {
+                "type": "number",
+                "const": 4
+              },
+              {
+                "type": "number",
+                "const": 8
+              }
+            ]
+          },
+          "cleanRepsToAdvance": {
+            "default": 8,
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
+          },
+          "timingToleranceMs": {
+            "default": 70,
+            "type": "integer",
+            "minimum": 20,
+            "maximum": 250
+          },
+          "checks": {
+            "default": [
+              "notes",
+              "timing"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "notes",
+                "timing",
+                "posture.rightWrist",
+                "posture.leftWrist",
+                "posture.leftThumb",
+                "posture.shoulders"
+              ]
+            }
+          },
+          "loop": {
+            "default": true,
+            "description": "Si el ejercicio se repite en bucle (true) o se toca una vez",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "tempo"
+        ]
+      }
+    }
+  },
+  "required": [
+    "id",
+    "title",
+    "level",
+    "exercises"
+  ],
+  "title": "Frontmatter de una lección (lessons/*.md)"
+}

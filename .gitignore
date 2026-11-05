@@ -1,0 +1,13 @@
+node_modules/
+dist/
+*.tsbuildinfo
+.DS_Store
+.env*
+
+# Personal data — never published
+curriculum/
+data/
+
+# Downloaded at setup time
+app/public/models/
+app/public/mediapipe/

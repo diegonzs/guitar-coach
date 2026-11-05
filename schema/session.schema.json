@@ -1,0 +1,540 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "formatVersion": {
+      "type": "number",
+      "const": 1
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{5,63}$"
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "exercise",
+        "assessment",
+        "free"
+      ]
+    },
+    "mode": {
+      "type": "string",
+      "enum": [
+        "audio",
+        "camera"
+      ]
+    },
+    "device": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "phone",
+            "tablet",
+            "laptop"
+          ]
+        },
+        "name": {
+          "type": "string",
+          "maxLength": 100
+        }
+      },
+      "required": [
+        "kind"
+      ]
+    },
+    "startedAt": {
+      "type": "string"
+    },
+    "endedAt": {
+      "type": "string"
+    },
+    "durationSec": {
+      "type": "number",
+      "minimum": 0
+    },
+    "lesson": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "title"
+      ]
+    },
+    "exercise": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "title"
+      ]
+    },
+    "bpm": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "beatUnit": {
+      "type": "integer",
+      "minimum": -9007199254740991,
+      "maximum": 9007199254740991
+    },
+    "latencyMs": {
+      "default": 0,
+      "type": "number"
+    },
+    "reps": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "index": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "clean": {
+            "type": "boolean"
+          },
+          "hits": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "meanAbsDeviationMs": {
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "index",
+          "clean",
+          "hits",
+          "total",
+          "meanAbsDeviationMs"
+        ]
+      }
+    },
+    "notes": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "rep": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "event": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "t": {
+            "type": "number"
+          },
+          "expected": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            }
+          },
+          "detected": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "hit": {
+            "type": "boolean"
+          },
+          "deviationMs": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "finger": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "rep",
+          "event",
+          "t",
+          "expected",
+          "detected",
+          "hit",
+          "deviationMs"
+        ]
+      }
+    },
+    "posture": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "t": {
+            "type": "number"
+          },
+          "check": {
+            "type": "string"
+          },
+          "value": {
+            "type": "number"
+          },
+          "message": {
+            "type": "string"
+          },
+          "frame": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "t",
+          "check",
+          "value",
+          "message"
+        ]
+      }
+    },
+    "cues": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "t": {
+            "type": "number"
+          },
+          "level": {
+            "type": "string",
+            "enum": [
+              "good",
+              "warn",
+              "bad",
+              "info"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "t",
+          "level",
+          "message"
+        ]
+      }
+    },
+    "summary": {
+      "type": "object",
+      "properties": {
+        "accuracy": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "meanDeviationMs": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "meanAbsDeviationMs": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "cleanReps": {
+          "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991
+        },
+        "totalReps": {
+          "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991
+        },
+        "notesExpected": {
+          "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991
+        },
+        "notesHit": {
+          "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991
+        },
+        "extraNotes": {
+          "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991
+        },
+        "problemNotes": {
+          "default": [],
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "midi": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "misses": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "heardAs": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "midi",
+              "misses",
+              "heardAs"
+            ]
+          }
+        },
+        "posture": {
+          "default": {},
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "type": "number"
+          }
+        }
+      },
+      "required": [
+        "accuracy",
+        "meanDeviationMs",
+        "meanAbsDeviationMs",
+        "cleanReps",
+        "totalReps",
+        "notesExpected",
+        "notesHit",
+        "extraNotes"
+      ]
+    },
+    "assessment": {
+      "type": "object",
+      "properties": {
+        "assessmentId": {
+          "type": "string"
+        },
+        "answers": {
+          "default": {},
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "tasks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              },
+              "level": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "skill": {
+                "type": "string"
+              },
+              "bpm": {
+                "type": "number"
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "passed",
+                  "failed",
+                  "skipped",
+                  "not-reached"
+                ]
+              },
+              "accuracy": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "meanAbsDeviationMs": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "title",
+              "level",
+              "skill",
+              "bpm",
+              "status",
+              "accuracy",
+              "meanAbsDeviationMs"
+            ]
+          }
+        },
+        "level": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "recommendedLessonId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "skills": {
+          "default": {},
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "type": "number"
+          }
+        }
+      },
+      "required": [
+        "assessmentId",
+        "tasks",
+        "level",
+        "recommendedLessonId"
+      ]
+    },
+    "userNote": {
+      "type": "string",
+      "maxLength": 4000
+    },
+    "files": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,80}$"
+          },
+          "type": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "size": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "audio",
+              "video",
+              "frame"
+            ]
+          },
+          "t": {
+            "type": "number"
+          },
+          "caption": {
+            "type": "string",
+            "maxLength": 200
+          }
+        },
+        "required": [
+          "name",
+          "type",
+          "size",
+          "kind"
+        ]
+      }
+    },
+    "unlockedBpm": {
+      "type": [
+        "number",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "formatVersion",
+    "id",
+    "kind",
+    "mode",
+    "device",
+    "startedAt",
+    "endedAt",
+    "durationSec",
+    "bpm",
+    "summary"
+  ],
+  "title": "Registro de una sesión de práctica (data/sessions/<id>/session.json)"
+}

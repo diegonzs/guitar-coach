@@ -1,0 +1,17 @@
+{
+  "name": "guitar-coach",
+  "private": true,
+  "type": "module",
+  "workspaces": ["packages/*", "app", "server"],
+  "scripts": {
+    "setup": "bun scripts/setup.ts",
+    "dev": "bun run --filter '@guitar-coach/server' --filter '@guitar-coach/app' dev",
+    "build": "bun run --filter '@guitar-coach/app' build",
+    "start": "bun run --filter '@guitar-coach/server' start",
+    "validate": "bun packages/core/src/cli/validate.ts",
+    "report": "bun server/src/report.ts",
+    "schema": "bun packages/core/scripts/gen-schema.ts",
+    "test": "bun test packages server",
+    "typecheck": "bun run --filter '*' typecheck"
+  }
+}
