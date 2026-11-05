@@ -1,0 +1,421 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>guitar-coach · mockup laptop</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+
+/* ============================================================
+   guitar-coach design tokens — shadcn/ui naming, custom values.
+   Scoped to .gc so they map 1:1 to a shadcn theme later.
+   Dark is the default ("practice at night"); .light overrides.
+   ============================================================ */
+.gc{
+  --radius: 14px;
+  --background: oklch(0.16 0.008 65);
+  --foreground: oklch(0.95 0.012 80);
+  --card: oklch(0.205 0.01 65);
+  --card-foreground: var(--foreground);
+  --popover: oklch(0.235 0.012 65);
+  --primary: oklch(0.79 0.135 68);          /* cedar / amber */
+  --primary-foreground: oklch(0.22 0.04 60);
+  --secondary: oklch(0.255 0.012 65);
+  --secondary-foreground: var(--foreground);
+  --muted: oklch(0.25 0.01 65);
+  --muted-foreground: oklch(0.69 0.018 72);
+  --accent: oklch(0.29 0.03 65);
+  --destructive: oklch(0.66 0.2 25);
+  --success: oklch(0.76 0.15 155);
+  --warning: oklch(0.84 0.15 88);
+  --info: oklch(0.74 0.11 235);
+  --border: oklch(1 0 0 / 0.08);
+  --input: oklch(1 0 0 / 0.12);
+  --ring: var(--primary);
+  --wood: oklch(0.55 0.09 58);
+}
+.gc.light{
+  --background: oklch(0.975 0.008 80);
+  --foreground: oklch(0.22 0.015 60);
+  --card: oklch(1 0 0);
+  --popover: oklch(1 0 0);
+  --primary: oklch(0.62 0.15 52);
+  --primary-foreground: oklch(0.99 0.01 80);
+  --secondary: oklch(0.945 0.01 80);
+  --muted: oklch(0.94 0.01 80);
+  --muted-foreground: oklch(0.5 0.02 65);
+  --accent: oklch(0.93 0.03 75);
+  --destructive: oklch(0.58 0.21 27);
+  --success: oklch(0.58 0.15 155);
+  --warning: oklch(0.66 0.15 70);
+  --info: oklch(0.55 0.13 240);
+  --border: oklch(0.2 0.02 60 / 0.1);
+  --input: oklch(0.2 0.02 60 / 0.14);
+  --wood: oklch(0.62 0.1 60);
+}
+
+/* ---------- gallery chrome (uses host vars when embedded) ---------- */
+*{box-sizing:border-box}
+body{margin:0;font-family:Geist,ui-sans-serif,system-ui,sans-serif;color:var(--foreground,#2a2622)}
+.gal-head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;margin:0 0 22px}
+.gal-head h1{font:400 30px/1 "Instrument Serif",serif;margin:0}
+.gal-head p{margin:6px 0 0;font-size:13px;color:var(--muted-foreground,#8a857e)}
+.gal-toggle{white-space:nowrap;font:500 13px Geist,sans-serif;padding:8px 14px;border-radius:999px;border:1px solid var(--border,#ccc);background:transparent;color:inherit;cursor:pointer}
+.grid{display:flex;flex-wrap:wrap;gap:30px 20px;justify-content:center}
+figure{margin:0;display:flex;flex-direction:column;align-items:center;gap:12px}
+figcaption{font-size:12.5px;color:var(--muted-foreground,#8a857e);text-align:center;max-width:320px;line-height:1.4}
+figcaption b{color:var(--foreground,#2a2622);font-weight:600}
+
+/* ---------- phone frame ---------- */
+.phone{width:336px;height:720px;border-radius:46px;background:var(--background);color:var(--foreground);
+  box-shadow:0 0 0 6px oklch(0.12 0 0),0 0 0 7px oklch(0.3 0 0),0 30px 60px -30px rgba(0,0,0,.7);
+  position:relative;overflow:hidden;display:flex;flex-direction:column;font-size:14px;line-height:1.35}
+.status{height:46px;flex:none;display:flex;justify-content:space-between;align-items:center;padding:4px 28px 0 32px;font-size:13.5px;font-weight:600;position:relative;z-index:5}
+.status .sys{display:flex;gap:5px;align-items:center}
+.status .bat{width:22px;height:11px;border:1.5px solid currentColor;border-radius:3px;position:relative;opacity:.9}
+.status .bat::after{content:"";position:absolute;inset:1.5px;right:5px;background:currentColor;border-radius:1px}
+.island{position:absolute;top:11px;left:50%;transform:translateX(-50%);width:98px;height:29px;border-radius:20px;background:#000;z-index:6}
+.screen{flex:1;min-height:0;overflow:hidden;padding:6px 18px 16px;display:flex;flex-direction:column;gap:12px}
+.tabbar{height:78px;flex:none;border-top:1px solid var(--border);display:grid;grid-template-columns:repeat(4,1fr);padding:9px 8px 26px;background:var(--background)}
+.tabbar span{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:10.5px;font-weight:500;color:var(--muted-foreground)}
+.tabbar span.on{color:var(--primary)}
+.home-ind{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:120px;height:5px;border-radius:9px;background:var(--foreground);opacity:.85;z-index:9}
+
+/* ---------- primitives (shadcn-like) ---------- */
+.icon{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.icon.sm{width:14px;height:14px}.icon.lg{width:22px;height:22px}
+.card{background:var(--card);color:var(--card-foreground);border:1px solid var(--border);border-radius:var(--radius);padding:14px}
+.row{display:flex;align-items:center;gap:10px}.between{justify-content:space-between}.wrap{flex-wrap:wrap}.col{display:flex;flex-direction:column}
+.grow{flex:1}.center{text-align:center}
+.muted{color:var(--muted-foreground)}.xs{font-size:12px}.sm{font-size:13px}
+.serif{font-family:"Instrument Serif",serif;font-weight:400;letter-spacing:-.01em}
+.mono{font-family:"Geist Mono",ui-monospace,monospace;font-feature-settings:"tnum"}
+.eyebrow{font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted-foreground);font-weight:600}
+.h1{font:400 31px/1.02 "Instrument Serif",serif;margin:2px 0 0;letter-spacing:-.01em}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:46px;padding:0 18px;border-radius:12px;font:600 14.5px Geist,sans-serif;border:1px solid transparent;color:var(--foreground);background:transparent}
+.btn.full{width:100%}
+.btn-primary{background:var(--primary);color:var(--primary-foreground);box-shadow:0 1px 0 oklch(1 0 0 / .25) inset,0 8px 20px -10px var(--primary)}
+.btn-secondary{background:var(--secondary);border-color:var(--border)}
+.btn-destructive{background:var(--destructive);color:#fff}
+.btn-icon{width:40px;height:40px;padding:0;border-radius:999px}
+.badge{display:inline-flex;align-items:center;gap:5px;height:24px;padding:0 9px;border-radius:999px;font-size:11.5px;font-weight:500;white-space:nowrap;border:1px solid var(--border);background:var(--secondary);color:var(--secondary-foreground)}
+.badge.warn{--c:var(--warning)}.badge.ok{--c:var(--success)}.badge.pri{--c:var(--primary)}.badge.bad{--c:var(--destructive)}.badge.info{--c:var(--info)}
+.badge.warn,.badge.ok,.badge.pri,.badge.bad,.badge.info{color:var(--c);background:color-mix(in oklch,var(--c) 14%,transparent);border-color:color-mix(in oklch,var(--c) 28%,transparent)}
+.dot{width:7px;height:7px;border-radius:50%;background:currentColor;flex:none}
+.progress{height:6px;border-radius:99px;background:var(--muted);overflow:hidden}.progress>i{display:block;height:100%;background:var(--primary);border-radius:inherit}
+.seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;background:var(--muted);border-radius:10px;padding:3px;font-size:12.5px;font-weight:500}
+.seg span{text-align:center;padding:6px 0;border-radius:8px;color:var(--muted-foreground)}.seg span.on{background:var(--card);color:var(--foreground);box-shadow:0 1px 3px rgba(0,0,0,.15)}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:9px;border:1px solid var(--border);font-size:12px;background:var(--card)}
+.sep{height:1px;background:var(--border)}
+.stat .v{font:600 20px/1.1 "Geist Mono",monospace;letter-spacing:-.02em}.stat .l{font-size:11px;color:var(--muted-foreground);margin-top:3px}
+.textarea{border:1px solid var(--input);border-radius:10px;padding:10px 12px;font-size:13px;min-height:58px;color:var(--muted-foreground);background:transparent}
+
+/* ---------- tab notation ---------- */
+.tab{display:block;overflow:visible}
+.tab-line{stroke:var(--muted-foreground);stroke-opacity:.45;stroke-width:1}
+.tab-bar{stroke:var(--muted-foreground);stroke-opacity:.7;stroke-width:1.2}
+.tab-clef{font:600 9px Geist,sans-serif;fill:var(--muted-foreground);text-anchor:middle}
+.tab-knock{fill:var(--tab-bg,var(--card))}
+.tab-n{font:600 11.5px "Geist Mono",monospace;fill:var(--foreground);text-anchor:middle}
+.tab-f{font:italic 400 13px "Instrument Serif",serif;fill:var(--muted-foreground);text-anchor:middle}
+.tab-n.hit,.tab-f.hit{fill:var(--success)}.tab-n.miss,.tab-f.miss{fill:var(--destructive)}.tab-n.now,.tab-f.now{fill:var(--primary)}
+.tab-n.todo{opacity:.55}
+.tab-cur{fill:var(--primary);fill-opacity:.14;stroke:var(--primary);stroke-opacity:.5}
+
+/* ---------- screen specifics ---------- */
+.week{display:flex;gap:6px}.week i{font-style:normal;display:flex;flex-direction:column;align-items:center;gap:5px;font-size:10px;color:var(--muted-foreground)}
+.week b{width:9px;height:9px;border-radius:50%;background:var(--muted)}.week b.d{background:var(--primary)}.week b.t{background:transparent;box-shadow:0 0 0 1.5px var(--primary) inset}
+.flame{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;color:var(--primary);background:color-mix(in oklch,var(--primary) 15%,transparent)}
+.plan{list-style:none;margin:10px 0 12px;padding:0;display:flex;flex-direction:column;gap:2px}
+.plan li{display:flex;align-items:center;gap:12px;padding:9px 8px;border-radius:10px}
+.plan li.now{background:color-mix(in oklch,var(--primary) 10%,transparent)}
+.plan .num{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font:600 11.5px "Geist Mono",monospace;border:1px solid var(--border);flex:none}
+.plan li.done .num{background:var(--success);color:var(--background);border-color:transparent}
+.plan li.done .t{text-decoration:line-through;color:var(--muted-foreground)}
+.plan li.now .num{background:var(--primary);color:var(--primary-foreground);border-color:transparent}
+
+.steps{display:flex;gap:4px;margin-top:10px}.steps span{flex:1;text-align:center;font:500 11px "Geist Mono",monospace;padding:6px 0;border-radius:7px;background:var(--muted);color:var(--muted-foreground)}
+.steps span.d{background:color-mix(in oklch,var(--success) 18%,transparent);color:var(--success)}
+.steps span.n{background:var(--primary);color:var(--primary-foreground)}
+
+/* camera (always dark — it's a video feed) */
+.cam{position:absolute;inset:0;background:radial-gradient(120% 80% at 50% 45%,#2a2420 0%,#120f0d 70%);color:#f3efe9}
+.cam svg.feed{position:absolute;inset:0;width:100%;height:100%}
+.cam-frame{position:absolute;inset:0;border-radius:46px;pointer-events:none;box-shadow:inset 0 0 0 4px var(--fb),inset 0 0 60px -10px var(--fb)}
+.hud{position:absolute;left:14px;right:14px;display:flex;align-items:center;justify-content:space-between;gap:8px;z-index:4}
+.glass{background:oklch(0.15 0.01 60 / .62);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid oklch(1 0 0 / .1);border-radius:999px;padding:6px 11px;font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:6px;color:#f3efe9}
+.beats{display:flex;gap:6px}.beats i{width:10px;height:10px;border-radius:50%;background:color-mix(in oklch,var(--foreground) 22%,transparent)}.hud .beats i:not(.on){background:oklch(1 0 0 / .3)}.beats i.on{background:var(--primary);box-shadow:0 0 0 4px color-mix(in oklch,var(--primary) 30%,transparent)}
+.cue{position:absolute;left:14px;right:14px;z-index:4;border-radius:16px;padding:12px 14px;display:flex;gap:11px;align-items:flex-start;
+  background:oklch(0.17 0.02 80 / .78);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid color-mix(in oklch,var(--c) 45%,transparent)}
+.cue .ic{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;background:color-mix(in oklch,var(--c) 22%,transparent);color:var(--c);flex:none}
+.cue b{display:block;font-size:13.5px;color:#fff}.cue span{font-size:12px;color:oklch(0.85 0.01 80)}
+.sheet{position:absolute;left:0;right:0;bottom:0;z-index:5;background:var(--card);border-top:1px solid var(--border);border-radius:24px 24px 0 0;padding:12px 16px 30px;display:flex;flex-direction:column;gap:12px}
+.grab{width:36px;height:4px;border-radius:9px;background:var(--muted-foreground);opacity:.35;margin:0 auto}
+.stats3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stats3 .stat{background:var(--muted);border-radius:11px;padding:8px 10px}
+
+.pulse{width:184px;height:184px;border-radius:50%;margin:4px auto 0;display:grid;place-items:center;position:relative;
+  background:radial-gradient(circle,color-mix(in oklch,var(--primary) 26%,transparent) 0%,transparent 70%)}
+.pulse::before,.pulse::after{content:"";position:absolute;inset:14px;border-radius:50%;border:1.5px solid color-mix(in oklch,var(--primary) 55%,transparent)}
+.pulse::after{inset:-2px;border-color:color-mix(in oklch,var(--primary) 18%,transparent)}
+.pulse .n{font:400 92px/1 "Instrument Serif",serif;color:var(--primary)}
+.notes{display:flex;gap:6px;justify-content:center}
+.note{width:42px;padding:7px 0 6px;border-radius:10px;text-align:center;font:600 13px "Geist Mono",monospace;border:1px solid var(--border);background:var(--card)}
+.note small{display:block;font:500 9.5px Geist,sans-serif;margin-top:2px;color:var(--muted-foreground)}
+.note.hit{border-color:color-mix(in oklch,var(--success) 40%,transparent);color:var(--success)}
+.note.miss{border-color:color-mix(in oklch,var(--destructive) 50%,transparent);color:var(--destructive);background:color-mix(in oklch,var(--destructive) 10%,var(--card))}
+.note.now{border-color:var(--primary);color:var(--primary);box-shadow:0 0 0 3px color-mix(in oklch,var(--primary) 20%,transparent)}
+.meter{position:relative;height:10px;border-radius:99px;background:linear-gradient(90deg,color-mix(in oklch,var(--warning) 45%,transparent),var(--muted) 35%,var(--muted) 65%,color-mix(in oklch,var(--warning) 45%,transparent))}
+.meter .zone{position:absolute;left:40%;width:20%;top:0;bottom:0;background:color-mix(in oklch,var(--success) 40%,transparent);border-radius:99px}
+.meter .mk{position:absolute;top:-5px;width:4px;height:20px;border-radius:3px;background:var(--foreground);box-shadow:0 0 0 3px var(--background)}
+
+.strings{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+.strings span{display:flex;flex-direction:column;align-items:center;padding:9px 0 7px;border-radius:11px;border:1px solid var(--border);background:var(--card);font:600 15px "Geist Mono",monospace}
+.strings span small{font:500 9.5px Geist,sans-serif;color:var(--muted-foreground);margin-top:2px}
+.strings span.on{background:var(--primary);color:var(--primary-foreground);border-color:transparent}.strings span.on small{color:inherit;opacity:.7}
+.strings span.ok{border-color:color-mix(in oklch,var(--success) 45%,transparent)}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.grid2 .stat{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:10px 12px}
+.list{display:flex;flex-direction:column;gap:9px;margin-top:8px}
+.list .it{display:flex;gap:10px;align-items:flex-start;font-size:12.5px}
+.list .it .ic{width:24px;height:24px;border-radius:7px;display:grid;place-items:center;flex:none;color:var(--c);background:color-mix(in oklch,var(--c) 16%,transparent)}
+
+.heat{display:grid;grid-template-rows:repeat(7,12px);grid-auto-columns:12px;grid-auto-flow:column;gap:3px;margin-top:10px;justify-content:space-between}
+.heat i{border-radius:3px;background:var(--muted)}
+.phase{display:flex;gap:10px;align-items:flex-start;position:relative;padding-bottom:11px}
+.phase:not(:last-child)::before{content:"";position:absolute;left:9px;top:22px;bottom:2px;width:2px;background:var(--border)}
+.phase .pd{width:20px;height:20px;border-radius:50%;border:2px solid var(--border);flex:none;background:var(--card)}
+.phase.cur .pd{border-color:var(--primary);box-shadow:0 0 0 4px color-mix(in oklch,var(--primary) 18%,transparent)}
+.phase.goal .pd{border-color:var(--primary);background:var(--primary)}
+.phase .pt{font-size:13px;font-weight:500}.phase .ps{font-size:11.5px;color:var(--muted-foreground)}
+
+/* ---------- desktop ---------- */
+.fit{width:1200px;transform-origin:0 0}
+.win{width:1200px;height:800px;border-radius:14px;overflow:hidden;background:var(--background);color:var(--foreground);
+  box-shadow:0 0 0 1px oklch(0.4 0 0 / .5),0 40px 80px -30px rgba(0,0,0,.7);display:flex;flex-direction:column;font-size:14px;line-height:1.35}
+.chrome{height:40px;flex:none;display:flex;align-items:center;gap:8px;padding:0 14px;border-bottom:1px solid var(--border);background:color-mix(in oklch,var(--background) 80%,var(--card))}
+.chrome i{width:12px;height:12px;border-radius:50%}
+.url{margin:0 auto;display:flex;align-items:center;gap:7px;font:500 12px "Geist Mono",monospace;color:var(--muted-foreground);background:var(--muted);padding:5px 14px;border-radius:8px}
+.app{flex:1;min-height:0;display:grid;grid-template-columns:64px 1fr}
+.side{border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 0}
+.logo{width:36px;height:36px;border-radius:10px;background:var(--primary);color:var(--primary-foreground);display:grid;place-items:center;font:400 24px/1 "Instrument Serif",serif;margin-bottom:12px}
+.nav{width:40px;height:40px;border-radius:10px;display:grid;place-items:center;color:var(--muted-foreground)}
+.nav.on{background:var(--secondary);color:var(--foreground)}
+.main{padding:16px 20px 18px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.top{display:flex;align-items:center;gap:14px}
+.tempo{display:flex;align-items:center;border:1px solid var(--border);border-radius:12px;background:var(--card);height:40px}
+.tempo button{width:36px;height:38px;border:0;background:transparent;color:var(--muted-foreground);font:500 18px Geist}
+.tempo b{font:600 14px "Geist Mono",monospace;padding:0 6px;min-width:70px;text-align:center}
+.content{flex:1;min-height:0;display:grid;grid-template-columns:1fr 300px;gap:14px}
+.feedbox{position:relative;border-radius:18px;overflow:hidden;background:radial-gradient(120% 90% at 45% 45%,#2a2420 0%,#100d0b 75%);color:#f3efe9}
+.feedbox > svg{position:absolute;inset:0;width:100%;height:100%}
+.feedbox .ring{position:absolute;inset:0;border-radius:18px;box-shadow:inset 0 0 0 3px var(--fb),inset 0 0 50px -12px var(--fb);pointer-events:none}
+.label{position:absolute;z-index:3}
+.rightcol{display:flex;flex-direction:column;gap:12px;min-height:0}
+.log{display:flex;flex-direction:column;gap:9px;margin-top:10px;font-size:12.5px}
+.log .it{display:flex;gap:9px;align-items:flex-start}
+.log .t{font:500 11px "Geist Mono",monospace;color:var(--muted-foreground);width:36px;flex:none;padding-top:3px}
+.log .ic{width:22px;height:22px;border-radius:7px;display:grid;place-items:center;flex:none;color:var(--c);background:color-mix(in oklch,var(--c) 16%,transparent)}
+.cue.desk{left:16px;right:auto;bottom:16px;width:360px}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></symbol>
+    <symbol id="i-book" viewBox="0 0 24 24"><path d="M2 4h6a4 4 0 0 1 4 4v13a3 3 0 0 0-3-3H2z"/><path d="M22 4h-6a4 4 0 0 0-4 4v13a3 3 0 0 1 3-3h7z"/></symbol>
+    <symbol id="i-gauge" viewBox="0 0 24 24"><path d="m12 14 4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/></symbol>
+    <symbol id="i-chart" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 5-6"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 4.5v15l12.5-7.5z" fill="currentColor"/></symbol>
+    <symbol id="i-pause" viewBox="0 0 24 24"><rect x="6" y="4.5" width="4" height="15" rx="1" fill="currentColor"/><rect x="14" y="4.5" width="4" height="15" rx="1" fill="currentColor"/></symbol>
+    <symbol id="i-stop" viewBox="0 0 24 24"><rect x="5.5" y="5.5" width="13" height="13" rx="2.5" fill="currentColor"/></symbol>
+    <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="2.5" width="6" height="12" rx="3"/><path d="M5 10.5v.5a7 7 0 0 0 14 0v-.5M12 18v3.5"/></symbol>
+    <symbol id="i-video" viewBox="0 0 24 24"><rect x="2" y="6" width="14" height="12" rx="2.5"/><path d="m16 10.5 6-3.5v10l-6-3.5"/></symbol>
+    <symbol id="i-cloud-off" viewBox="0 0 24 24"><path d="m2 2 20 20"/><path d="M5.7 8.7A6 6 0 0 0 7 20h10.5"/><path d="M21 16.6A4.5 4.5 0 0 0 17.5 10h-1.2A7 7 0 0 0 9.3 5.3"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+    <symbol id="i-check-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="m8 12.5 2.8 2.8L16.5 9.5"/></symbol>
+    <symbol id="i-chev-left" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
+    <symbol id="i-flame" viewBox="0 0 24 24"><path d="M12 22c4 0 7-2.8 7-7 0-4.6-4-7-4.5-12C11 5 8 8 8 12c-1-.6-1.7-1.8-2-3-1 1.6-1 3.6-1 6 0 4.2 3 7 7 7z"/></symbol>
+    <symbol id="i-wrist" viewBox="0 0 24 24"><path d="M12 22v-6"/><path d="M12 16c-3 0-5-2-5-5V7a1.5 1.5 0 0 1 3 0v3M10 10V4.5a1.5 1.5 0 0 1 3 0V10M13 10V5.5a1.5 1.5 0 0 1 3 0V11M16 11V8a1.5 1.5 0 0 1 3 0v4c0 2.5-2 4-4 4h-3"/></symbol>
+    <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><circle cx="12" cy="12" r="5.5"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></symbol>
+    <symbol id="i-volume" viewBox="0 0 24 24"><path d="M11 5 6 9H2.5v6H6l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+    <symbol id="i-trend" viewBox="0 0 24 24"><path d="m3 17 6-6 4 4 8-8"/><path d="M15 7h6v6"/></symbol>
+    <symbol id="i-sparkle" viewBox="0 0 24 24"><path d="M12 3c.6 4.6 2.4 6.4 7 7-4.6.6-6.4 2.4-7 7-.6-4.6-2.4-6.4-7-7 4.6-.6 6.4-2.4 7-7z"/></symbol>
+    <symbol id="i-laptop" viewBox="0 0 24 24"><rect x="4" y="4.5" width="16" height="11" rx="1.5"/><path d="M2 19.5h20"/></symbol>
+  </defs>
+</svg>
+<div class="gal-head">
+  <div>
+    <h1>guitar-coach · laptop</h1>
+    <p>Práctica en casa: cámara frontal de la laptop + iPhone como segunda cámara enfocando la mano derecha</p>
+  </div>
+  <button class="gal-toggle" id="toggle">Ver tema claro</button>
+</div>
+
+<div id="fitwrap"><div class="fit" id="fit">
+<div class="win gc">
+  <div class="chrome">
+    <i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i>
+    <span class="url"><svg class="icon sm"><use href="#i-check-circle"/></svg>guitar-coach.tu-tailnet.ts.net</span>
+    <span style="width:52px"></span>
+  </div>
+  <div class="app">
+    <aside class="side">
+      <div class="logo">g</div>
+      <span class="nav"><svg class="icon"><use href="#i-home"/></svg></span>
+      <span class="nav on"><svg class="icon"><use href="#i-book"/></svg></span>
+      <span class="nav"><svg class="icon"><use href="#i-gauge"/></svg></span>
+      <span class="nav"><svg class="icon"><use href="#i-chart"/></svg></span>
+    </aside>
+
+    <main class="main">
+      <div class="top">
+        <button class="btn btn-secondary btn-icon"><svg class="icon"><use href="#i-chev-left"/></svg></button>
+        <div class="grow">
+          <div class="eyebrow">Lección 1 · Nivel 1 · Rep 10 / 10</div>
+          <div class="serif" style="font-size:26px;line-height:1.1">Arpegio p-i-m-a en La menor</div>
+        </div>
+        <span class="badge ok"><span class="dot"></span>iPhone conectado</span>
+        <div class="tempo"><button>−</button><b>60 BPM</b><button>+</button></div>
+        <div class="beats" style="margin:0 4px"><i></i><i></i><i class="on"></i></div>
+        <span class="badge bad" style="height:40px;border-radius:12px;padding:0 12px;font-family:'Geist Mono';font-size:13px"><span class="dot"></span>REC 04:18</span>
+        <button class="btn btn-secondary" style="height:40px"><svg class="icon"><use href="#i-pause"/></svg>Pausa</button>
+        <button class="btn btn-destructive" style="height:40px"><svg class="icon"><use href="#i-stop"/></svg>Terminar</button>
+      </div>
+
+      <div class="content">
+        <div class="feedbox" style="--fb:var(--success)">
+          <svg viewBox="0 0 820 440" preserveAspectRatio="xMidYMid slice" data-scene="front"></svg>
+          <div class="ring"></div>
+          <span class="label glass" style="top:14px;left:14px"><svg class="icon sm"><use href="#i-laptop"/></svg>Laptop · frente</span>
+          <span class="label glass" style="top:14px;right:14px;color:var(--success)"><svg class="icon sm"><use href="#i-check-circle"/></svg>Postura bien</span>
+          <div class="cue desk" style="--c:var(--success);top:auto">
+            <span class="ic"><svg class="icon"><use href="#i-sparkle"/></svg></span>
+            <div><b>¡10 repeticiones limpias!</b><span>Desbloqueaste 65 BPM. ¿Lo intentas?</span></div>
+          </div>
+        </div>
+
+        <div class="rightcol">
+          <div class="feedbox" style="height:190px;flex:none;--fb:var(--success)">
+            <svg viewBox="0 0 300 190" preserveAspectRatio="xMidYMid slice" data-scene="closeup"></svg>
+            <div class="ring"></div>
+            <span class="label glass" style="top:10px;left:10px;font-size:11px">iPhone · mano derecha</span>
+          </div>
+
+          <div class="card" style="padding:12px">
+            <div class="grid2" style="gap:8px">
+              <div class="stat" style="background:var(--muted);border:0"><div class="v" style="color:var(--success)">96%</div><div class="l">notas bien</div></div>
+              <div class="stat" style="background:var(--muted);border:0"><div class="v">+8<small style="font-size:12px"> ms</small></div><div class="l">a tiempo</div></div>
+              <div class="stat" style="background:var(--muted);border:0"><div class="v">10<small class="muted" style="font-size:13px">/10</small></div><div class="l">reps limpias</div></div>
+              <div class="stat" style="background:var(--muted);border:0"><div class="v">12°</div><div class="l">muñeca derecha</div></div>
+            </div>
+          </div>
+
+          <div class="card" style="padding:12px 14px;flex:1;min-height:0">
+            <span class="sm" style="font-weight:600">Indicaciones</span>
+            <div class="log">
+              <div class="it" style="--c:var(--success)"><span class="t">04:15</span><span class="ic"><svg class="icon sm"><use href="#i-sparkle"/></svg></span><div>10 repeticiones limpias</div></div>
+              <div class="it" style="--c:var(--success)"><span class="t">02:51</span><span class="ic"><svg class="icon sm"><use href="#i-check"/></svg></span><div>Muñeca corregida</div></div>
+              <div class="it" style="--c:var(--warning)"><span class="t">02:20</span><span class="ic"><svg class="icon sm"><use href="#i-wrist"/></svg></span><div>Muñeca derecha doblada 38°</div></div>
+              <div class="it" style="--c:var(--destructive)"><span class="t">01:02</span><span class="ic"><svg class="icon sm"><use href="#i-target"/></svg></span><div>C4 apagado 3 veces seguidas</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="padding:12px 16px 8px">
+        <div class="row between" style="margin-bottom:6px"><span class="sm" style="font-weight:600">Tablatura</span><span class="xs muted mono">p i m a m i · 3/4</span></div>
+        <div data-tab='{"w":1060,"rep":4,"cursor":15,"states":["hit","hit","hit","hit","hit","hit","hit","hit","hit","hit","hit","hit","hit","hit","hit","now"],"fing":true}'></div>
+      </div>
+    </main>
+  </div>
+</div>
+</div></div>
+
+<script>
+
+const AM = [[5,0,'p'],[3,2,'i'],[2,1,'m'],[1,0,'a'],[2,1,'m'],[3,2,'i']];
+
+function tabSVG(o){
+  const notes = Array.from({length:o.rep||1}).flatMap(()=>AM);
+  const W=o.w, gap=10, top=8, left=24, right=6, H=top+gap*5+(o.fing?24:10);
+  const step=(W-left-right)/notes.length;
+  let s=`<svg class="tab" viewBox="0 0 ${W} ${H}" width="100%">`;
+  if(o.cursor!=null){const x=left+step*o.cursor; s+=`<rect class="tab-cur" x="${x+1.5}" y="${top-6}" width="${step-3}" height="${gap*5+(o.fing?30:12)}" rx="6"/>`;}
+  ['T','A','B'].forEach((c,i)=>s+=`<text class="tab-clef" x="9" y="${top+gap*(1.15+i*1.35)}">${c}</text>`);
+  for(let i=0;i<6;i++){const y=top+i*gap;s+=`<line class="tab-line" x1="${left-6}" x2="${W-right}" y1="${y}" y2="${y}"/>`;}
+  const bars=o.rep||1;
+  for(let b=0;b<=bars;b++){const x=left-6+(W-right-left+6)*b/bars;s+=`<line class="tab-bar" x1="${x}" x2="${x}" y1="${top}" y2="${top+gap*5}"/>`;}
+  notes.forEach(([str,fret,f],k)=>{
+    const x=left+step*(k+.5), y=top+(str-1)*gap;
+    let st=(o.states||[])[k]||(o.states?'todo':'');
+    s+=`<rect class="tab-knock" x="${x-5.5}" y="${y-6}" width="11" height="12"/><text class="tab-n ${st}" x="${x}" y="${y+4}">${fret}</text>`;
+    if(o.fing) s+=`<text class="tab-f ${st==='todo'?'':st}" x="${x}" y="${top+gap*5+17}">${f}</text>`;
+  });
+  return s+'</svg>';
+}
+
+function guitar(x,y,sc,rot,op=1){
+  let s=`<g transform="translate(${x} ${y}) rotate(${rot}) scale(${sc})" opacity="${op}">`;
+  s+=`<path d="M0 -205 C 70 -205 82 -160 70 -125 C 60 -98 62 -78 92 -40 C 125 5 108 88 0 92 C -108 88 -125 5 -92 -40 C -62 -78 -60 -98 -70 -125 C -82 -160 -70 -205 0 -205 Z" fill="oklch(0.55 0.09 62)" stroke="oklch(0.35 0.05 50)" stroke-width="3"/>`;
+  s+=`<circle cy="-92" r="27" fill="#16110e" stroke="oklch(0.4 0.06 55)" stroke-width="4"/>`;
+  s+=`<rect x="-30" y="22" width="60" height="12" rx="3" fill="oklch(0.3 0.04 45)"/>`;
+  s+=`<rect x="-17" y="-470" width="34" height="290" fill="oklch(0.32 0.04 45)"/>`;
+  for(let f=0;f<13;f++){const fy=-460+f*f*0.9+f*12;s+=`<line x1="-17" x2="17" y1="${fy}" y2="${fy}" stroke="oklch(0.75 0.01 80)" stroke-width="1.4"/>`;}
+  s+=`<rect x="-21" y="-530" width="42" height="60" rx="5" fill="oklch(0.36 0.05 50)"/>`;
+  for(let i=0;i<6;i++){const sx=-11+i*4.4;s+=`<line x1="${sx*1.15}" x2="${sx}" y1="28" y2="-470" stroke="oklch(0.92 0.02 85)" stroke-width="${1.6-i*.15}" opacity=".8"/>`;}
+  return s+'</g>';
+}
+const HAND=[[0,0],[-20,-12],[-34,-26],[-44,-40],[-52,-52],[-12,-48],[-14,-72],[-15,-88],[-16,-100],[2,-50],[3,-77],[4,-94],[5,-107],[14,-46],[17,-70],[19,-85],[20,-96],[24,-38],[29,-56],[32,-67],[34,-77]];
+const LINKS=[[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[5,9],[9,10],[10,11],[11,12],[9,13],[13,14],[14,15],[15,16],[13,17],[17,18],[18,19],[19,20],[0,17]];
+function hand(x,y,sc,rot,color,curl=0){
+  const r=rot*Math.PI/180;
+  const P=HAND.map(([px,py],i)=>{ if(curl&&i%4!==1&&i>4){const k=(i-1)%4; px+= curl*k*4; py+= curl*k*9;} return [x+(px*Math.cos(r)-py*Math.sin(r))*sc, y+(px*Math.sin(r)+py*Math.cos(r))*sc];});
+  let s='';
+  LINKS.forEach(([a,b])=>s+=`<line x1="${P[a][0]}" y1="${P[a][1]}" x2="${P[b][0]}" y2="${P[b][1]}" stroke="${color}" stroke-width="2.2" stroke-linecap="round" opacity=".9"/>`);
+  P.forEach((p,i)=>s+=`<circle cx="${p[0]}" cy="${p[1]}" r="${i===0?4.5:3}" fill="#fff" stroke="${color}" stroke-width="1.6"/>`);
+  return s;
+}
+
+document.querySelectorAll('[data-tab]').forEach(el=>el.innerHTML=tabSVG(JSON.parse(el.dataset.tab)));
+
+function pose(c){
+  const L=(a,b)=>`<line x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" stroke="${c}" stroke-width="3" stroke-linecap="round" opacity=".85"/>`;
+  const J=p=>`<circle cx="${p[0]}" cy="${p[1]}" r="5" fill="#fff" stroke="${c}" stroke-width="2"/>`;
+  const P={ls:[215,140],rs:[385,140],le:[200,250],re:[480,248],lw:[318,262],rw:[566,258],hl:[262,380],hr:[338,380],neck:[300,128]};
+  let s=`<circle cx="300" cy="72" r="36" fill="none" stroke="${c}" stroke-width="3" opacity=".85"/>`;
+  s+=L(P.neck,[300,108])+L(P.ls,P.rs)+L(P.ls,P.le)+L(P.le,P.lw)+L(P.rs,P.re)+L(P.re,P.rw)+L(P.ls,P.hl)+L(P.rs,P.hr)+L(P.hl,P.hr)+L(P.hl,[245,440])+L(P.hr,[355,440]);
+  Object.values(P).forEach(p=>s+=J(p));
+  return s;
+}
+document.querySelectorAll('[data-scene="front"]').forEach(el=>{
+  let s=guitar(340,332,.72,62);
+  s+=pose('var(--info)');
+  s+=hand(318,262,.66,160,'var(--success)');
+  s+=hand(566,258,.6,-12,'var(--success)',1);
+  s+=`<g transform="translate(150 196)"><rect width="78" height="22" rx="11" fill="var(--success)"/><text x="39" y="15.5" text-anchor="middle" style="font:700 11.5px 'Geist Mono';fill:#0d1a12">muñeca 12°</text></g>`;
+  s+=`<g transform="translate(600 300)"><rect width="104" height="22" rx="11" fill="var(--success)"/><text x="52" y="15.5" text-anchor="middle" style="font:700 11.5px 'Geist Mono';fill:#0d1a12">pulgar detrás</text></g>`;
+  el.innerHTML=s;
+});
+document.querySelectorAll('[data-scene="closeup"]').forEach(el=>{
+  let s=`<rect width="300" height="190" fill="oklch(0.5 0.085 60)"/><circle cx="262" cy="96" r="62" fill="#16110e" stroke="oklch(0.38 0.06 55)" stroke-width="8"/>`;
+  for(let i=0;i<6;i++){const y=52+i*17;s+=`<line x1="0" x2="300" y1="${y}" y2="${y}" stroke="oklch(0.93 0.02 85)" stroke-width="${2.6-i*.25}" opacity=".9"/>`;}
+  s+=hand(118,8,1.05,165,'var(--success)');
+  el.innerHTML=s;
+});
+
+/* fit the 1200px window into whatever width we're shown at */
+const fit=document.getElementById('fit'),wrap=document.getElementById('fitwrap');
+function doFit(){const k=Math.min(1,wrap.clientWidth/1200);fit.style.transform=`scale(${k})`;wrap.style.height=(800*k)+'px';}
+addEventListener('resize',doFit);doFit();
+
+const t=document.getElementById('toggle');
+t.onclick=()=>{const on=!document.querySelector('.gc').classList.contains('light');document.querySelectorAll('.gc').forEach(p=>p.classList.toggle('light',on));t.textContent=on?'Ver tema oscuro':'Ver tema claro';};
+</script>
+</body>
+</html>

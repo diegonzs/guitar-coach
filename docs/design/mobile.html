@@ -1,0 +1,706 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>guitar-coach · mockups iPhone</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   guitar-coach design tokens — shadcn/ui naming, custom values.
+   Scoped to .gc so they map 1:1 to a shadcn theme later.
+   Dark is the default ("practice at night"); .light overrides.
+   ============================================================ */
+.gc{
+  --radius: 14px;
+  --background: oklch(0.16 0.008 65);
+  --foreground: oklch(0.95 0.012 80);
+  --card: oklch(0.205 0.01 65);
+  --card-foreground: var(--foreground);
+  --popover: oklch(0.235 0.012 65);
+  --primary: oklch(0.79 0.135 68);          /* cedar / amber */
+  --primary-foreground: oklch(0.22 0.04 60);
+  --secondary: oklch(0.255 0.012 65);
+  --secondary-foreground: var(--foreground);
+  --muted: oklch(0.25 0.01 65);
+  --muted-foreground: oklch(0.69 0.018 72);
+  --accent: oklch(0.29 0.03 65);
+  --destructive: oklch(0.66 0.2 25);
+  --success: oklch(0.76 0.15 155);
+  --warning: oklch(0.84 0.15 88);
+  --info: oklch(0.74 0.11 235);
+  --border: oklch(1 0 0 / 0.08);
+  --input: oklch(1 0 0 / 0.12);
+  --ring: var(--primary);
+  --wood: oklch(0.55 0.09 58);
+}
+.gc.light{
+  --background: oklch(0.975 0.008 80);
+  --foreground: oklch(0.22 0.015 60);
+  --card: oklch(1 0 0);
+  --popover: oklch(1 0 0);
+  --primary: oklch(0.62 0.15 52);
+  --primary-foreground: oklch(0.99 0.01 80);
+  --secondary: oklch(0.945 0.01 80);
+  --muted: oklch(0.94 0.01 80);
+  --muted-foreground: oklch(0.5 0.02 65);
+  --accent: oklch(0.93 0.03 75);
+  --destructive: oklch(0.58 0.21 27);
+  --success: oklch(0.58 0.15 155);
+  --warning: oklch(0.66 0.15 70);
+  --info: oklch(0.55 0.13 240);
+  --border: oklch(0.2 0.02 60 / 0.1);
+  --input: oklch(0.2 0.02 60 / 0.14);
+  --wood: oklch(0.62 0.1 60);
+}
+
+/* ---------- gallery chrome (uses host vars when embedded) ---------- */
+*{box-sizing:border-box}
+body{margin:0;font-family:Geist,ui-sans-serif,system-ui,sans-serif;color:var(--foreground,#2a2622)}
+.gal-head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;margin:0 0 22px}
+.gal-head h1{font:400 30px/1 "Instrument Serif",serif;margin:0}
+.gal-head p{margin:6px 0 0;font-size:13px;color:var(--muted-foreground,#8a857e)}
+.gal-toggle{white-space:nowrap;font:500 13px Geist,sans-serif;padding:8px 14px;border-radius:999px;border:1px solid var(--border,#ccc);background:transparent;color:inherit;cursor:pointer}
+.grid{display:flex;flex-wrap:wrap;gap:30px 20px;justify-content:center}
+figure{margin:0;display:flex;flex-direction:column;align-items:center;gap:12px}
+figcaption{font-size:12.5px;color:var(--muted-foreground,#8a857e);text-align:center;max-width:320px;line-height:1.4}
+figcaption b{color:var(--foreground,#2a2622);font-weight:600}
+@media (max-width:780px){.grid{gap:22px 10px}.phone{zoom:.66}figcaption{max-width:224px;font-size:11.5px}}
+
+/* ---------- phone frame ---------- */
+.phone{width:336px;height:720px;border-radius:46px;background:var(--background);color:var(--foreground);
+  box-shadow:0 0 0 6px oklch(0.12 0 0),0 0 0 7px oklch(0.3 0 0),0 30px 60px -30px rgba(0,0,0,.7);
+  position:relative;overflow:hidden;display:flex;flex-direction:column;font-size:14px;line-height:1.35}
+.status{height:46px;flex:none;display:flex;justify-content:space-between;align-items:center;padding:4px 28px 0 32px;font-size:13.5px;font-weight:600;position:relative;z-index:5}
+.status .sys{display:flex;gap:5px;align-items:center}
+.status .bat{width:22px;height:11px;border:1.5px solid currentColor;border-radius:3px;position:relative;opacity:.9}
+.status .bat::after{content:"";position:absolute;inset:1.5px;right:5px;background:currentColor;border-radius:1px}
+.island{position:absolute;top:11px;left:50%;transform:translateX(-50%);width:98px;height:29px;border-radius:20px;background:#000;z-index:6}
+.screen{flex:1;min-height:0;overflow:hidden;padding:6px 18px 16px;display:flex;flex-direction:column;gap:12px}
+.tabbar{height:78px;flex:none;border-top:1px solid var(--border);display:grid;grid-template-columns:repeat(4,1fr);padding:9px 8px 26px;background:var(--background)}
+.tabbar span{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:10.5px;font-weight:500;color:var(--muted-foreground)}
+.tabbar span.on{color:var(--primary)}
+.home-ind{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:120px;height:5px;border-radius:9px;background:var(--foreground);opacity:.85;z-index:9}
+
+/* ---------- primitives (shadcn-like) ---------- */
+.icon{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.icon.sm{width:14px;height:14px}.icon.lg{width:22px;height:22px}
+.card{background:var(--card);color:var(--card-foreground);border:1px solid var(--border);border-radius:var(--radius);padding:14px}
+.row{display:flex;align-items:center;gap:10px}.between{justify-content:space-between}.wrap{flex-wrap:wrap}.col{display:flex;flex-direction:column}
+.grow{flex:1}.center{text-align:center}
+.muted{color:var(--muted-foreground)}.xs{font-size:12px}.sm{font-size:13px}
+.serif{font-family:"Instrument Serif",serif;font-weight:400;letter-spacing:-.01em}
+.mono{font-family:"Geist Mono",ui-monospace,monospace;font-feature-settings:"tnum"}
+.eyebrow{font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted-foreground);font-weight:600}
+.h1{font:400 31px/1.02 "Instrument Serif",serif;margin:2px 0 0;letter-spacing:-.01em}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:46px;padding:0 18px;border-radius:12px;font:600 14.5px Geist,sans-serif;border:1px solid transparent;color:var(--foreground);background:transparent}
+.btn.full{width:100%}
+.btn-primary{background:var(--primary);color:var(--primary-foreground);box-shadow:0 1px 0 oklch(1 0 0 / .25) inset,0 8px 20px -10px var(--primary)}
+.btn-secondary{background:var(--secondary);border-color:var(--border)}
+.btn-destructive{background:var(--destructive);color:#fff}
+.btn-icon{width:40px;height:40px;padding:0;border-radius:999px}
+.badge{display:inline-flex;align-items:center;gap:5px;height:24px;padding:0 9px;border-radius:999px;font-size:11.5px;font-weight:500;white-space:nowrap;border:1px solid var(--border);background:var(--secondary);color:var(--secondary-foreground)}
+.badge.warn{--c:var(--warning)}.badge.ok{--c:var(--success)}.badge.pri{--c:var(--primary)}.badge.bad{--c:var(--destructive)}.badge.info{--c:var(--info)}
+.badge.warn,.badge.ok,.badge.pri,.badge.bad,.badge.info{color:var(--c);background:color-mix(in oklch,var(--c) 14%,transparent);border-color:color-mix(in oklch,var(--c) 28%,transparent)}
+.dot{width:7px;height:7px;border-radius:50%;background:currentColor;flex:none}
+.progress{height:6px;border-radius:99px;background:var(--muted);overflow:hidden}.progress>i{display:block;height:100%;background:var(--primary);border-radius:inherit}
+.seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;background:var(--muted);border-radius:10px;padding:3px;font-size:12.5px;font-weight:500}
+.seg span{text-align:center;padding:6px 0;border-radius:8px;color:var(--muted-foreground)}.seg span.on{background:var(--card);color:var(--foreground);box-shadow:0 1px 3px rgba(0,0,0,.15)}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:9px;border:1px solid var(--border);font-size:12px;background:var(--card)}
+.sep{height:1px;background:var(--border)}
+.stat .v{font:600 20px/1.1 "Geist Mono",monospace;letter-spacing:-.02em}.stat .l{font-size:11px;color:var(--muted-foreground);margin-top:3px}
+.textarea{border:1px solid var(--input);border-radius:10px;padding:10px 12px;font-size:13px;min-height:58px;color:var(--muted-foreground);background:transparent}
+
+/* ---------- tab notation ---------- */
+.tab{display:block;overflow:visible}
+.tab-line{stroke:var(--muted-foreground);stroke-opacity:.45;stroke-width:1}
+.tab-bar{stroke:var(--muted-foreground);stroke-opacity:.7;stroke-width:1.2}
+.tab-clef{font:600 9px Geist,sans-serif;fill:var(--muted-foreground);text-anchor:middle}
+.tab-knock{fill:var(--tab-bg,var(--card))}
+.tab-n{font:600 11.5px "Geist Mono",monospace;fill:var(--foreground);text-anchor:middle}
+.tab-f{font:italic 400 13px "Instrument Serif",serif;fill:var(--muted-foreground);text-anchor:middle}
+.tab-n.hit,.tab-f.hit{fill:var(--success)}.tab-n.miss,.tab-f.miss{fill:var(--destructive)}.tab-n.now,.tab-f.now{fill:var(--primary)}
+.tab-n.todo{opacity:.55}
+.tab-cur{fill:var(--primary);fill-opacity:.14;stroke:var(--primary);stroke-opacity:.5}
+
+/* ---------- screen specifics ---------- */
+.week{display:flex;gap:6px}.week i{font-style:normal;display:flex;flex-direction:column;align-items:center;gap:5px;font-size:10px;color:var(--muted-foreground)}
+.week b{width:9px;height:9px;border-radius:50%;background:var(--muted)}.week b.d{background:var(--primary)}.week b.t{background:transparent;box-shadow:0 0 0 1.5px var(--primary) inset}
+.flame{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;color:var(--primary);background:color-mix(in oklch,var(--primary) 15%,transparent)}
+.plan{list-style:none;margin:10px 0 12px;padding:0;display:flex;flex-direction:column;gap:2px}
+.plan li{display:flex;align-items:center;gap:12px;padding:9px 8px;border-radius:10px}
+.plan li.now{background:color-mix(in oklch,var(--primary) 10%,transparent)}
+.plan .num{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font:600 11.5px "Geist Mono",monospace;border:1px solid var(--border);flex:none}
+.plan li.done .num{background:var(--success);color:var(--background);border-color:transparent}
+.plan li.done .t{text-decoration:line-through;color:var(--muted-foreground)}
+.plan li.now .num{background:var(--primary);color:var(--primary-foreground);border-color:transparent}
+
+.steps{display:flex;gap:4px;margin-top:10px}.steps span{flex:1;text-align:center;font:500 11px "Geist Mono",monospace;padding:6px 0;border-radius:7px;background:var(--muted);color:var(--muted-foreground)}
+.steps span.d{background:color-mix(in oklch,var(--success) 18%,transparent);color:var(--success)}
+.steps span.n{background:var(--primary);color:var(--primary-foreground)}
+
+/* camera (always dark — it's a video feed) */
+.cam{position:absolute;inset:0;background:radial-gradient(120% 80% at 50% 45%,#2a2420 0%,#120f0d 70%);color:#f3efe9}
+.cam svg.feed{position:absolute;inset:0;width:100%;height:100%}
+.cam-frame{position:absolute;inset:0;border-radius:46px;pointer-events:none;box-shadow:inset 0 0 0 4px var(--fb),inset 0 0 60px -10px var(--fb)}
+.hud{position:absolute;left:14px;right:14px;display:flex;align-items:center;justify-content:space-between;gap:8px;z-index:4}
+.glass{background:oklch(0.15 0.01 60 / .62);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid oklch(1 0 0 / .1);border-radius:999px;padding:6px 11px;font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:6px;color:#f3efe9}
+.beats{display:flex;gap:6px}.beats i{width:10px;height:10px;border-radius:50%;background:color-mix(in oklch,var(--foreground) 22%,transparent)}.hud .beats i:not(.on){background:oklch(1 0 0 / .3)}.beats i.on{background:var(--primary);box-shadow:0 0 0 4px color-mix(in oklch,var(--primary) 30%,transparent)}
+.cue{position:absolute;left:14px;right:14px;z-index:4;border-radius:16px;padding:12px 14px;display:flex;gap:11px;align-items:flex-start;
+  background:oklch(0.17 0.02 80 / .78);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid color-mix(in oklch,var(--c) 45%,transparent)}
+.cue .ic{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;background:color-mix(in oklch,var(--c) 22%,transparent);color:var(--c);flex:none}
+.cue b{display:block;font-size:13.5px;color:#fff}.cue span{font-size:12px;color:oklch(0.85 0.01 80)}
+.sheet{position:absolute;left:0;right:0;bottom:0;z-index:5;background:var(--card);border-top:1px solid var(--border);border-radius:24px 24px 0 0;padding:12px 16px 30px;display:flex;flex-direction:column;gap:12px}
+.grab{width:36px;height:4px;border-radius:9px;background:var(--muted-foreground);opacity:.35;margin:0 auto}
+.stats3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stats3 .stat{background:var(--muted);border-radius:11px;padding:8px 10px}
+
+.pulse{width:184px;height:184px;border-radius:50%;margin:4px auto 0;display:grid;place-items:center;position:relative;
+  background:radial-gradient(circle,color-mix(in oklch,var(--primary) 26%,transparent) 0%,transparent 70%)}
+.pulse::before,.pulse::after{content:"";position:absolute;inset:14px;border-radius:50%;border:1.5px solid color-mix(in oklch,var(--primary) 55%,transparent)}
+.pulse::after{inset:-2px;border-color:color-mix(in oklch,var(--primary) 18%,transparent)}
+.pulse .n{font:400 92px/1 "Instrument Serif",serif;color:var(--primary)}
+.notes{display:flex;gap:6px;justify-content:center}
+.note{width:42px;padding:7px 0 6px;border-radius:10px;text-align:center;font:600 13px "Geist Mono",monospace;border:1px solid var(--border);background:var(--card)}
+.note small{display:block;font:500 9.5px Geist,sans-serif;margin-top:2px;color:var(--muted-foreground)}
+.note.hit{border-color:color-mix(in oklch,var(--success) 40%,transparent);color:var(--success)}
+.note.miss{border-color:color-mix(in oklch,var(--destructive) 50%,transparent);color:var(--destructive);background:color-mix(in oklch,var(--destructive) 10%,var(--card))}
+.note.now{border-color:var(--primary);color:var(--primary);box-shadow:0 0 0 3px color-mix(in oklch,var(--primary) 20%,transparent)}
+.meter{position:relative;height:10px;border-radius:99px;background:linear-gradient(90deg,color-mix(in oklch,var(--warning) 45%,transparent),var(--muted) 35%,var(--muted) 65%,color-mix(in oklch,var(--warning) 45%,transparent))}
+.meter .zone{position:absolute;left:40%;width:20%;top:0;bottom:0;background:color-mix(in oklch,var(--success) 40%,transparent);border-radius:99px}
+.meter .mk{position:absolute;top:-5px;width:4px;height:20px;border-radius:3px;background:var(--foreground);box-shadow:0 0 0 3px var(--background)}
+
+.strings{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+.strings span{display:flex;flex-direction:column;align-items:center;padding:9px 0 7px;border-radius:11px;border:1px solid var(--border);background:var(--card);font:600 15px "Geist Mono",monospace}
+.strings span small{font:500 9.5px Geist,sans-serif;color:var(--muted-foreground);margin-top:2px}
+.strings span.on{background:var(--primary);color:var(--primary-foreground);border-color:transparent}.strings span.on small{color:inherit;opacity:.7}
+.strings span.ok{border-color:color-mix(in oklch,var(--success) 45%,transparent)}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.grid2 .stat{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:10px 12px}
+.list{display:flex;flex-direction:column;gap:9px;margin-top:8px}
+.list .it{display:flex;gap:10px;align-items:flex-start;font-size:12.5px}
+.list .it .ic{width:24px;height:24px;border-radius:7px;display:grid;place-items:center;flex:none;color:var(--c);background:color-mix(in oklch,var(--c) 16%,transparent)}
+
+.heat{display:grid;grid-template-rows:repeat(7,12px);grid-auto-columns:12px;grid-auto-flow:column;gap:3px;margin-top:10px;justify-content:space-between}
+.heat i{border-radius:3px;background:var(--muted)}
+.phase{display:flex;gap:10px;align-items:flex-start;position:relative;padding-bottom:11px}
+.phase:not(:last-child)::before{content:"";position:absolute;left:9px;top:22px;bottom:2px;width:2px;background:var(--border)}
+.phase .pd{width:20px;height:20px;border-radius:50%;border:2px solid var(--border);flex:none;background:var(--card)}
+.phase.cur .pd{border-color:var(--primary);box-shadow:0 0 0 4px color-mix(in oklch,var(--primary) 18%,transparent)}
+.phase.goal .pd{border-color:var(--primary);background:var(--primary)}
+.phase .pt{font-size:13px;font-weight:500}.phase .ps{font-size:11.5px;color:var(--muted-foreground)}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></symbol>
+    <symbol id="i-book" viewBox="0 0 24 24"><path d="M2 4h6a4 4 0 0 1 4 4v13a3 3 0 0 0-3-3H2z"/><path d="M22 4h-6a4 4 0 0 0-4 4v13a3 3 0 0 1 3-3h7z"/></symbol>
+    <symbol id="i-gauge" viewBox="0 0 24 24"><path d="m12 14 4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/></symbol>
+    <symbol id="i-chart" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 5-6"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 4.5v15l12.5-7.5z" fill="currentColor"/></symbol>
+    <symbol id="i-pause" viewBox="0 0 24 24"><rect x="6" y="4.5" width="4" height="15" rx="1" fill="currentColor"/><rect x="14" y="4.5" width="4" height="15" rx="1" fill="currentColor"/></symbol>
+    <symbol id="i-stop" viewBox="0 0 24 24"><rect x="5.5" y="5.5" width="13" height="13" rx="2.5" fill="currentColor"/></symbol>
+    <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="2.5" width="6" height="12" rx="3"/><path d="M5 10.5v.5a7 7 0 0 0 14 0v-.5M12 18v3.5"/></symbol>
+    <symbol id="i-video" viewBox="0 0 24 24"><rect x="2" y="6" width="14" height="12" rx="2.5"/><path d="m16 10.5 6-3.5v10l-6-3.5"/></symbol>
+    <symbol id="i-cloud-off" viewBox="0 0 24 24"><path d="m2 2 20 20"/><path d="M5.7 8.7A6 6 0 0 0 7 20h10.5"/><path d="M21 16.6A4.5 4.5 0 0 0 17.5 10h-1.2A7 7 0 0 0 9.3 5.3"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+    <symbol id="i-check-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="m8 12.5 2.8 2.8L16.5 9.5"/></symbol>
+    <symbol id="i-chev-left" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
+    <symbol id="i-flame" viewBox="0 0 24 24"><path d="M12 22c4 0 7-2.8 7-7 0-4.6-4-7-4.5-12C11 5 8 8 8 12c-1-.6-1.7-1.8-2-3-1 1.6-1 3.6-1 6 0 4.2 3 7 7 7z"/></symbol>
+    <symbol id="i-wrist" viewBox="0 0 24 24"><path d="M12 22v-6"/><path d="M12 16c-3 0-5-2-5-5V7a1.5 1.5 0 0 1 3 0v3M10 10V4.5a1.5 1.5 0 0 1 3 0V10M13 10V5.5a1.5 1.5 0 0 1 3 0V11M16 11V8a1.5 1.5 0 0 1 3 0v4c0 2.5-2 4-4 4h-3"/></symbol>
+    <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><circle cx="12" cy="12" r="5.5"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></symbol>
+    <symbol id="i-volume" viewBox="0 0 24 24"><path d="M11 5 6 9H2.5v6H6l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+    <symbol id="i-trend" viewBox="0 0 24 24"><path d="m3 17 6-6 4 4 8-8"/><path d="M15 7h6v6"/></symbol>
+    <symbol id="i-sparkle" viewBox="0 0 24 24"><path d="M12 3c.6 4.6 2.4 6.4 7 7-4.6.6-6.4 2.4-7 7-.6-4.6-2.4-6.4-7-7 4.6-.6 6.4-2.4 7-7z"/></symbol>
+    <symbol id="i-laptop" viewBox="0 0 24 24"><rect x="4" y="4.5" width="16" height="11" rx="1.5"/><path d="M2 19.5h20"/></symbol>
+  </defs>
+</svg>
+
+<div class="gal-head">
+  <div>
+    <h1>guitar-coach · iPhone</h1>
+    <p>Mockups de diseño · basados en tokens de shadcn/ui con tema propio (madera de cedro, noche de práctica)</p>
+  </div>
+  <button class="gal-toggle" id="toggle">Ver tema claro</button>
+</div>
+
+<div class="grid">
+
+<!-- ======================= 1 · HOY ======================= -->
+<figure>
+<div class="phone gc">
+  <div class="island"></div>
+  <div class="status"><span>9:41</span><span class="sys">●●●● <span class="bat"></span></span></div>
+  <div class="screen">
+    <div class="row between" style="align-items:flex-start">
+      <div><div class="eyebrow">Martes 4 de noviembre</div><h2 class="h1">Buenas noches</h2></div>
+      <span class="badge warn" style="margin-top:4px"><svg class="icon sm"><use href="#i-cloud-off"/></svg>Sin conexión · 2</span>
+    </div>
+
+    <div class="card row between" style="padding:12px 14px">
+      <div class="row">
+        <span class="flame"><svg class="icon lg"><use href="#i-flame"/></svg></span>
+        <div><div class="serif" style="font-size:24px;line-height:1">6 días</div><div class="muted xs">seguidos practicando</div></div>
+      </div>
+      <div class="week"><i><b class="d"></b>L</i><i><b class="d"></b>M</i><i><b class="d"></b>M</i><i><b class="d"></b>J</i><i><b class="d"></b>V</i><i><b class="d"></b>S</i><i><b class="t"></b>D</i></div>
+    </div>
+
+    <div class="card">
+      <div class="row between"><b style="font-size:15px">Práctica de hoy</b><span class="muted xs mono">12 / 30 min</span></div>
+      <div class="progress" style="margin-top:9px"><i style="width:40%"></i></div>
+      <ol class="plan">
+        <li class="done"><span class="num"><svg class="icon sm" style="stroke-width:3"><use href="#i-check"/></svg></span><div class="grow"><div class="t">Afinar y cuerdas al aire</div><div class="muted xs">5 min</div></div></li>
+        <li class="now"><span class="num">2</span><div class="grow"><div>Arpegio p-i-m-a en Am</div><div class="muted xs">15 min · objetivo 65 BPM</div></div><span class="badge pri">Ahora</span></li>
+        <li><span class="num">3</span><div class="grow"><div>Toca lo que quieras</div><div class="muted xs">10 min · modo libre</div></div></li>
+      </ol>
+      <button class="btn btn-primary full"><svg class="icon"><use href="#i-play"/></svg>Continuar práctica</button>
+    </div>
+
+    <div class="card row between">
+      <div>
+        <div class="eyebrow">Tu meta</div>
+        <div class="serif" style="font-size:23px;line-height:1.1;margin-top:3px">Nate's Theme</div>
+        <div class="muted xs">Fase 1 de 4 · Fundamentos</div>
+      </div>
+      <svg width="58" height="58" viewBox="0 0 58 58"><circle cx="29" cy="29" r="24" fill="none" stroke="var(--muted)" stroke-width="6"/><circle cx="29" cy="29" r="24" fill="none" stroke="var(--primary)" stroke-width="6" stroke-linecap="round" stroke-dasharray="150.8" stroke-dashoffset="135" transform="rotate(-90 29 29)"/><text x="29" y="33" text-anchor="middle" style="font:600 12px 'Geist Mono',monospace;fill:var(--foreground)">10%</text></svg>
+    </div>
+
+  </div>
+  <nav class="tabbar">
+    <span class="on"><svg class="icon lg"><use href="#i-home"/></svg>Hoy</span>
+    <span><svg class="icon lg"><use href="#i-book"/></svg>Lecciones</span>
+    <span><svg class="icon lg"><use href="#i-gauge"/></svg>Afinador</span>
+    <span><svg class="icon lg"><use href="#i-chart"/></svg>Progreso</span>
+  </nav>
+  <div class="home-ind"></div>
+</div>
+<figcaption><b>1 · Hoy</b> — la rutina de 30 min, tu racha, la meta y el estado de sincronización.</figcaption>
+</figure>
+
+<!-- ======================= 2 · LECCIÓN ======================= -->
+<figure>
+<div class="phone gc">
+  <div class="island"></div>
+  <div class="status"><span>9:41</span><span class="sys">●●●● <span class="bat"></span></span></div>
+  <div class="screen">
+    <div class="row between">
+      <button class="btn btn-secondary btn-icon"><svg class="icon"><use href="#i-chev-left"/></svg></button>
+      <span class="badge ok"><svg class="icon sm"><use href="#i-check-circle"/></svg>Disponible sin conexión</span>
+    </div>
+    <div>
+      <div class="eyebrow">Lección 1 · Nivel 1</div>
+      <h2 class="h1">Arpegio p-i-m-a<br>en La menor</h2>
+    </div>
+
+    <div class="card" style="padding:12px 12px 8px">
+      <div class="row" style="gap:12px;align-items:flex-start">
+        <div class="grow" data-tab='{"w":210,"fing":true}'></div>
+        <div style="width:62px" data-chord></div>
+      </div>
+      <div class="row between xs muted" style="margin-top:4px"><span>3/4 · corcheas</span><span><span class="mono">p i m a m i</span></span></div>
+    </div>
+
+    <div class="card" style="padding:12px 14px">
+      <div class="row between"><span class="sm" style="font-weight:500">Tempo</span><span class="mono xs muted">sube 5 BPM con 10 reps limpias</span></div>
+      <div class="steps"><span class="d">50</span><span class="d">55</span><span class="n">60</span><span>65</span><span>70</span><span>75</span><span>80</span></div>
+    </div>
+
+    <p class="sm" style="margin:0;color:var(--muted-foreground);line-height:1.5">Mantén el pulgar <b style="color:var(--foreground);font-weight:500">por delante</b> de los dedos y que cada nota suene igual de fuerte. La velocidad llega sola.</p>
+
+    <div class="row wrap" style="gap:6px">
+      <span class="chip"><svg class="icon sm"><use href="#i-target"/></svg>Notas</span>
+      <span class="chip"><svg class="icon sm"><use href="#i-gauge"/></svg>Tiempo</span>
+      <span class="chip"><svg class="icon sm"><use href="#i-wrist"/></svg>Muñeca derecha</span>
+    </div>
+
+    <div class="col" style="gap:8px;margin-top:auto">
+      <button class="btn btn-primary full"><svg class="icon"><use href="#i-video"/></svg>Practicar con cámara</button>
+      <button class="btn btn-secondary full"><svg class="icon"><use href="#i-mic"/></svg>Solo audio</button>
+    </div>
+  </div>
+  <div class="home-ind"></div>
+</div>
+<figcaption><b>2 · Lección</b> — tablatura con digitación, diagrama del acorde, escalera de tempo y qué va a revisar la app.</figcaption>
+</figure>
+
+<!-- ======================= 3 · PRÁCTICA CON CÁMARA ======================= -->
+<figure>
+<div class="phone gc" style="--fb:var(--warning)">
+  <div class="cam">
+    <svg class="feed" viewBox="0 0 336 720" preserveAspectRatio="xMidYMid slice" data-scene="phone"></svg>
+  </div>
+  <div class="cam-frame"></div>
+  <div class="island"></div>
+  <div class="status" style="color:#fff"><span>9:41</span><span class="sys">●●●● <span class="bat"></span></span></div>
+
+  <div class="hud" style="top:52px">
+    <span class="glass"><span class="dot" style="color:var(--destructive)"></span>03:42</span>
+    <div class="beats"><i></i><i class="on"></i><i></i></div>
+    <span class="glass mono">60 BPM</span>
+  </div>
+  <div class="cue" style="--c:var(--warning);top:96px">
+    <span class="ic"><svg class="icon"><use href="#i-wrist"/></svg></span>
+    <div><b>Endereza la muñeca derecha</b><span>Está doblada 38°. Alinéala con el antebrazo.</span></div>
+  </div>
+
+  <div class="sheet">
+    <div class="grab"></div>
+    <div class="row between"><span class="sm" style="font-weight:600">Arpegio Am</span><span class="muted xs mono">Rep 7 / 10</span></div>
+    <div data-tab='{"w":300,"rep":2,"cursor":8,"states":["hit","hit","hit","hit","hit","hit","hit","miss","now"],"fing":true}'></div>
+    <div class="stats3">
+      <div class="stat"><div class="v" style="color:var(--success)">94%</div><div class="l">notas bien</div></div>
+      <div class="stat"><div class="v">+12<small style="font-size:12px"> ms</small></div><div class="l">un poco tarde</div></div>
+      <div class="stat"><div class="v">6</div><div class="l">reps limpias</div></div>
+    </div>
+    <div class="row" style="gap:8px">
+      <button class="btn btn-secondary grow"><svg class="icon"><use href="#i-pause"/></svg>Pausa</button>
+      <button class="btn btn-destructive grow"><svg class="icon"><use href="#i-stop"/></svg>Terminar</button>
+    </div>
+  </div>
+  <div class="home-ind"></div>
+</div>
+<figcaption><b>3 · Práctica con cámara</b> — el borde cambia de color (verde, ámbar, rojo) y las indicaciones aparecen entre repeticiones.</figcaption>
+</figure>
+
+<!-- ======================= 4 · SOLO AUDIO ======================= -->
+<figure>
+<div class="phone gc">
+  <div class="island"></div>
+  <div class="status"><span>9:41</span><span class="sys">●●●● <span class="bat"></span></span></div>
+  <div class="screen" style="gap:14px">
+    <div class="row between">
+      <button class="btn btn-secondary btn-icon"><svg class="icon"><use href="#i-chev-left"/></svg></button>
+      <div class="center"><div class="sm" style="font-weight:600">Arpegio Am</div><div class="xs muted">Solo audio · Rep 4 / 10</div></div>
+      <span class="badge warn" style="padding:0 7px"><svg class="icon sm"><use href="#i-cloud-off"/></svg></span>
+    </div>
+
+    <div class="pulse"><span class="n">2</span></div>
+    <div class="row" style="justify-content:center;gap:10px">
+      <div class="beats"><i></i><i class="on"></i><i></i></div>
+      <span class="mono sm muted">60 BPM</span>
+    </div>
+
+    <div>
+      <div class="eyebrow center" style="margin-bottom:8px">Últimas notas</div>
+      <div class="notes">
+        <span class="note hit">A2<small>p</small></span>
+        <span class="note hit">A3<small>i</small></span>
+        <span class="note hit">C4<small>m</small></span>
+        <span class="note hit">E4<small>a</small></span>
+        <span class="note miss">B3<small>era C4</small></span>
+        <span class="note now">A3<small>i</small></span>
+      </div>
+    </div>
+
+    <div class="card" style="padding:12px 14px">
+      <div class="row between xs muted" style="margin-bottom:10px"><span>Adelantado</span><span style="color:var(--success);font-weight:600">A tiempo</span><span>Atrasado</span></div>
+      <div class="meter"><span class="zone"></span><span class="mk" style="left:56%"></span></div>
+      <div class="center xs" style="margin-top:10px">Vas <b class="mono">+12 ms</b> tarde en promedio · está bien</div>
+    </div>
+
+    <div class="row" style="gap:8px;margin-top:auto">
+      <button class="btn btn-secondary grow"><svg class="icon"><use href="#i-pause"/></svg>Pausa</button>
+      <button class="btn btn-destructive grow"><svg class="icon"><use href="#i-stop"/></svg>Terminar</button>
+    </div>
+  </div>
+  <div class="home-ind"></div>
+</div>
+<figcaption><b>4 · Solo audio</b> — para practicar en el sofá: pulso grande, notas detectadas y medidor de tiempo. Funciona sin conexión.</figcaption>
+</figure>
+
+<!-- ======================= 5 · AFINADOR ======================= -->
+<figure>
+<div class="phone gc">
+  <div class="island"></div>
+  <div class="status"><span>9:41</span><span class="sys">●●●● <span class="bat"></span></span></div>
+  <div class="screen" style="gap:16px">
+    <div class="row between" style="align-items:flex-end">
+      <div><div class="eyebrow">Estándar · 440 Hz</div><h2 class="h1">Afinador</h2></div>
+      <div class="seg" style="width:120px"><span class="on">Auto</span><span>Manual</span></div>
+    </div>
+
+    <div class="center" style="margin-top:6px">
+      <svg width="290" height="150" viewBox="0 0 290 150" data-gauge="4"></svg>
+      <div style="margin-top:-38px"><span class="serif" style="font-size:96px;line-height:.9">G</span><span class="serif muted" style="font-size:30px">3</span></div>
+      <div class="mono sm muted" style="margin-top:6px">196,4 Hz</div>
+      <div class="badge ok" style="margin-top:12px"><span class="dot"></span>+4 cents · casi perfecto</div>
+    </div>
+
+    <div style="margin-top:auto">
+      <div class="eyebrow" style="margin-bottom:8px">Cuerdas</div>
+      <div class="strings">
+        <span class="ok">E<small>6ª</small></span><span class="ok">A<small>5ª</small></span><span class="ok">D<small>4ª</small></span><span class="on">G<small>3ª</small></span><span>B<small>2ª</small></span><span>E<small>1ª</small></span>
+      </div>
+    </div>
+    <button class="btn btn-secondary full"><svg class="icon"><use href="#i-volume"/></svg>Tocar nota de referencia</button>
+  </div>
+  <nav class="tabbar">
+    <span><svg class="icon lg"><use href="#i-home"/></svg>Hoy</span>
+    <span><svg class="icon lg"><use href="#i-book"/></svg>Lecciones</span>
+    <span class="on"><svg class="icon lg"><use href="#i-gauge"/></svg>Afinador</span>
+    <span><svg class="icon lg"><use href="#i-chart"/></svg>Progreso</span>
+  </nav>
+  <div class="home-ind"></div>
+</div>
+<figcaption><b>5 · Afinador</b> — detección automática de la cuerda; las que ya están afinadas quedan marcadas en verde.</figcaption>
+</figure>
+
+<!-- ======================= 6 · RESUMEN ======================= -->
+<figure>
+<div class="phone gc">
+  <div class="island"></div>
+  <div class="status"><span>9:41</span><span class="sys">●●●● <span class="bat"></span></span></div>
+  <div class="screen">
+    <div>
+      <div class="eyebrow">Sesión terminada · 15:20 min</div>
+      <h2 class="h1">¡Buen trabajo!</h2>
+    </div>
+    <div class="grid2">
+      <div class="stat"><div class="v" style="color:var(--success)">92%</div><div class="l">notas correctas</div></div>
+      <div class="stat"><div class="v">+18<small style="font-size:12px"> ms</small></div><div class="l">desfase promedio</div></div>
+      <div class="stat"><div class="v">8<small class="muted" style="font-size:13px">/10</small></div><div class="l">repeticiones limpias</div></div>
+      <div class="stat"><div class="v" style="color:var(--primary)">60</div><div class="l">BPM · nuevo récord</div></div>
+    </div>
+
+    <div class="card" style="padding:12px 14px">
+      <div class="row between"><span class="sm" style="font-weight:600">Tiempo por nota</span><span class="xs muted">ms vs metrónomo</span></div>
+      <svg width="100%" height="74" viewBox="0 0 270 74" preserveAspectRatio="none" data-timing></svg>
+    </div>
+
+    <div class="card" style="padding:12px 14px">
+      <span class="sm" style="font-weight:600">Para revisar</span>
+      <div class="list">
+        <div class="it" style="--c:var(--destructive)"><span class="ic"><svg class="icon sm"><use href="#i-target"/></svg></span><div>El <b>C4</b> (2ª cuerda) sonó apagado <b>6 veces</b>. Arquea más el dedo 1.</div></div>
+        <div class="it" style="--c:var(--warning)"><span class="ic"><svg class="icon sm"><use href="#i-wrist"/></svg></span><div>Muñeca derecha doblada el <b>22%</b> del tiempo.</div></div>
+        <div class="it" style="--c:var(--success)"><span class="ic"><svg class="icon sm"><use href="#i-trend"/></svg></span><div>Siguiente vez: prueba a <b>65 BPM</b>.</div></div>
+      </div>
+    </div>
+
+    <div class="textarea">Nota para tu instructor… <span style="opacity:.6">ej. “la uña del anular se engancha”</span></div>
+
+    <div class="row" style="gap:8px;margin-top:auto">
+      <span class="badge warn grow" style="justify-content:center;height:46px;border-radius:12px;font-size:12px"><svg class="icon sm"><use href="#i-cloud-off"/></svg>Se enviará al conectar</span>
+      <button class="btn btn-primary" style="flex:1">Guardar</button>
+    </div>
+  </div>
+  <div class="home-ind"></div>
+</div>
+<figcaption><b>6 · Resumen</b> — lo que tú ves y lo que yo reviso después: métricas, errores frecuentes y tu nota para mí.</figcaption>
+</figure>
+
+<!-- ======================= 7 · PROGRESO ======================= -->
+<figure>
+<div class="phone gc">
+  <div class="island"></div>
+  <div class="status"><span>9:41</span><span class="sys">●●●● <span class="bat"></span></span></div>
+  <div class="screen">
+    <div class="row between" style="align-items:flex-end">
+      <h2 class="h1">Progreso</h2>
+      <div class="seg" style="width:170px"><span>Semana</span><span class="on">Mes</span><span>Todo</span></div>
+    </div>
+    <div class="grid2" style="grid-template-columns:repeat(3,1fr)">
+      <div class="stat"><div class="v">7h40</div><div class="l">practicadas</div></div>
+      <div class="stat"><div class="v">14</div><div class="l">sesiones</div></div>
+      <div class="stat"><div class="v" style="color:var(--primary)">6</div><div class="l">días seguidos</div></div>
+    </div>
+
+    <div class="card" style="padding:12px 14px">
+      <div class="row between"><span class="sm" style="font-weight:600">Arpegio Am · tempo</span><span class="badge ok"><svg class="icon sm"><use href="#i-trend"/></svg>+10 BPM</span></div>
+      <svg width="100%" height="104" viewBox="0 0 270 104" data-bpm></svg>
+    </div>
+
+    <div class="card" style="padding:12px 14px">
+      <div class="row between"><span class="sm" style="font-weight:600">Minutos por día</span><span class="xs muted">últimas 16 semanas</span></div>
+      <div class="heat" data-heat></div>
+    </div>
+
+    <div class="card" style="padding:12px 14px 2px">
+      <div class="sm" style="font-weight:600;margin-bottom:10px">Camino a Nate's Theme</div>
+      <div class="phase cur"><span class="pd"></span><div><div class="pt">Fundamentos</div><div class="ps">Lección 1 de 8 · en curso</div></div></div>
+      <div class="phase"><span class="pd"></span><div><div class="pt">Independencia de manos</div></div></div>
+      <div class="phase"><span class="pd"></span><div><div class="pt">Primeros arreglos</div></div></div>
+    </div>
+  </div>
+  <nav class="tabbar">
+    <span><svg class="icon lg"><use href="#i-home"/></svg>Hoy</span>
+    <span><svg class="icon lg"><use href="#i-book"/></svg>Lecciones</span>
+    <span><svg class="icon lg"><use href="#i-gauge"/></svg>Afinador</span>
+    <span class="on"><svg class="icon lg"><use href="#i-chart"/></svg>Progreso</span>
+  </nav>
+  <div class="home-ind"></div>
+</div>
+<figcaption><b>7 · Progreso</b> — tempo por ejercicio, constancia y en qué parte del camino hacia tu meta estás.</figcaption>
+</figure>
+
+<!-- ======================= 8 · CALIBRACIÓN ======================= -->
+<figure>
+<div class="phone gc" style="--fb:var(--primary)">
+  <div class="cam">
+    <svg class="feed" viewBox="0 0 336 720" preserveAspectRatio="xMidYMid slice" data-scene="calib"></svg>
+  </div>
+  <div class="island"></div>
+  <div class="status" style="color:#fff"><span>9:41</span><span class="sys">●●●● <span class="bat"></span></span></div>
+  <div class="hud" style="top:52px">
+    <span class="glass"><svg class="icon sm"><use href="#i-x"/></svg>Cancelar</span>
+    <span class="glass">Calibración</span>
+  </div>
+  <div class="sheet">
+    <div class="grab"></div>
+    <div class="row between"><span class="eyebrow">Paso 2 de 2</span><div class="row" style="gap:5px"><span class="dot" style="color:var(--success);width:8px;height:8px"></span><span class="dot" style="color:var(--primary);width:8px;height:8px"></span></div></div>
+    <div class="serif" style="font-size:25px;line-height:1.1">Toca el <span style="color:var(--primary)">traste 12</span> en la imagen</div>
+    <div class="sm muted" style="line-height:1.45">Así la app sabe dónde está el mástil y puede ubicar tus dedos. Solo hace falta repetirlo si mueves la cámara.</div>
+    <div class="row" style="gap:8px">
+      <button class="btn btn-secondary grow">Repetir</button>
+      <button class="btn btn-primary grow">Listo</button>
+    </div>
+  </div>
+  <div class="home-ind"></div>
+</div>
+<figcaption><b>8 · Calibración</b> — 10 segundos antes de practicar con cámara: marcas la cejuela y el traste 12.</figcaption>
+</figure>
+
+</div>
+
+<script>
+/* ---------- helpers that draw the illustrative bits ---------- */
+const AM = [[5,0,'p'],[3,2,'i'],[2,1,'m'],[1,0,'a'],[2,1,'m'],[3,2,'i']];
+
+function tabSVG(o){
+  const notes = Array.from({length:o.rep||1}).flatMap(()=>AM);
+  const W=o.w, gap=10, top=8, left=24, right=6, H=top+gap*5+(o.fing?24:10);
+  const step=(W-left-right)/notes.length;
+  let s=`<svg class="tab" viewBox="0 0 ${W} ${H}" width="100%">`;
+  if(o.cursor!=null){const x=left+step*o.cursor; s+=`<rect class="tab-cur" x="${x+1.5}" y="${top-6}" width="${step-3}" height="${gap*5+(o.fing?30:12)}" rx="6"/>`;}
+  ['T','A','B'].forEach((c,i)=>s+=`<text class="tab-clef" x="9" y="${top+gap*(1.15+i*1.35)}">${c}</text>`);
+  for(let i=0;i<6;i++){const y=top+i*gap;s+=`<line class="tab-line" x1="${left-6}" x2="${W-right}" y1="${y}" y2="${y}"/>`;}
+  const bars=o.rep||1;
+  for(let b=0;b<=bars;b++){const x=left-6+(W-right-left+6)*b/bars;s+=`<line class="tab-bar" x1="${x}" x2="${x}" y1="${top}" y2="${top+gap*5}"/>`;}
+  notes.forEach(([str,fret,f],k)=>{
+    const x=left+step*(k+.5), y=top+(str-1)*gap;
+    let st=(o.states||[])[k]||(o.states?'todo':'');
+    s+=`<rect class="tab-knock" x="${x-5.5}" y="${y-6}" width="11" height="12"/><text class="tab-n ${st}" x="${x}" y="${y+4}">${fret}</text>`;
+    if(o.fing) s+=`<text class="tab-f ${st==='todo'?'':st}" x="${x}" y="${top+gap*5+17}">${f}</text>`;
+  });
+  return s+'</svg>';
+}
+document.querySelectorAll('[data-tab]').forEach(el=>el.innerHTML=tabSVG(JSON.parse(el.dataset.tab)));
+
+/* Am chord diagram: strings 6..1 left→right */
+document.querySelectorAll('[data-chord]').forEach(el=>{
+  const W=62,x0=8,dx=9.2,y0=16,dy=15;
+  let s=`<svg viewBox="0 0 ${W} 92" width="100%"><text x="${W/2}" y="8" text-anchor="middle" style="font:600 10px Geist;fill:var(--foreground)">Am</text>`;
+  s+=`<rect x="${x0}" y="${y0-2}" width="${dx*5}" height="3" fill="var(--foreground)"/>`;
+  for(let i=0;i<6;i++)s+=`<line x1="${x0+i*dx}" x2="${x0+i*dx}" y1="${y0}" y2="${y0+dy*4}" stroke="var(--muted-foreground)" stroke-opacity=".6"/>`;
+  for(let j=1;j<=4;j++)s+=`<line x1="${x0}" x2="${x0+dx*5}" y1="${y0+j*dy}" y2="${y0+j*dy}" stroke="var(--muted-foreground)" stroke-opacity=".4"/>`;
+  const top={6:'×',5:'○',1:'○'};
+  Object.entries(top).forEach(([st,c])=>s+=`<text x="${x0+(6-st)*dx}" y="${y0+dy*4+13}" text-anchor="middle" style="font:500 9px Geist;fill:var(--muted-foreground)">${c}</text>`);
+  [[2,1,1],[4,2,2],[3,2,3]].forEach(([st,fr,fi])=>{const cx=x0+(6-st)*dx,cy=y0+(fr-.5)*dy;s+=`<circle cx="${cx}" cy="${cy}" r="4.6" fill="var(--primary)"/><text x="${cx}" y="${cy+3}" text-anchor="middle" style="font:700 7px Geist;fill:var(--primary-foreground)">${fi}</text>`;});
+  el.innerHTML=s+'</svg>';
+});
+
+/* stylised guitar + MediaPipe-like hand landmarks */
+function guitar(x,y,sc,rot,op=1){
+  let s=`<g transform="translate(${x} ${y}) rotate(${rot}) scale(${sc})" opacity="${op}">`;
+  s+=`<path d="M0 -205 C 70 -205 82 -160 70 -125 C 60 -98 62 -78 92 -40 C 125 5 108 88 0 92 C -108 88 -125 5 -92 -40 C -62 -78 -60 -98 -70 -125 C -82 -160 -70 -205 0 -205 Z" fill="oklch(0.55 0.09 62)" stroke="oklch(0.35 0.05 50)" stroke-width="3"/>`;
+  s+=`<circle cy="-92" r="27" fill="#16110e" stroke="oklch(0.4 0.06 55)" stroke-width="4"/>`;
+  s+=`<rect x="-30" y="22" width="60" height="12" rx="3" fill="oklch(0.3 0.04 45)"/>`;
+  s+=`<rect x="-17" y="-470" width="34" height="290" fill="oklch(0.32 0.04 45)"/>`;
+  for(let f=0;f<13;f++){const fy=-460+f*f*0.9+f*12;s+=`<line x1="-17" x2="17" y1="${fy}" y2="${fy}" stroke="oklch(0.75 0.01 80)" stroke-width="1.4"/>`;}
+  s+=`<rect x="-21" y="-530" width="42" height="60" rx="5" fill="oklch(0.36 0.05 50)"/>`;
+  for(let i=0;i<6;i++){const sx=-11+i*4.4;s+=`<line x1="${sx*1.15}" x2="${sx}" y1="28" y2="-470" stroke="oklch(0.92 0.02 85)" stroke-width="${1.6-i*.15}" opacity=".8"/>`;}
+  return s+'</g>';
+}
+const HAND=[[0,0],[-20,-12],[-34,-26],[-44,-40],[-52,-52],[-12,-48],[-14,-72],[-15,-88],[-16,-100],[2,-50],[3,-77],[4,-94],[5,-107],[14,-46],[17,-70],[19,-85],[20,-96],[24,-38],[29,-56],[32,-67],[34,-77]];
+const LINKS=[[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[5,9],[9,10],[10,11],[11,12],[9,13],[13,14],[14,15],[15,16],[13,17],[17,18],[18,19],[19,20],[0,17]];
+function hand(x,y,sc,rot,color,curl=0){
+  const r=rot*Math.PI/180;
+  const P=HAND.map(([px,py],i)=>{ if(curl&&i%4!==1&&i>4){const k=(i-1)%4; px+= curl*k*4; py+= curl*k*9;} return [x+(px*Math.cos(r)-py*Math.sin(r))*sc, y+(px*Math.sin(r)+py*Math.cos(r))*sc];});
+  let s='';
+  LINKS.forEach(([a,b])=>s+=`<line x1="${P[a][0]}" y1="${P[a][1]}" x2="${P[b][0]}" y2="${P[b][1]}" stroke="${color}" stroke-width="2.2" stroke-linecap="round" opacity=".9"/>`);
+  P.forEach((p,i)=>s+=`<circle cx="${p[0]}" cy="${p[1]}" r="${i===0?4.5:3}" fill="#fff" stroke="${color}" stroke-width="1.6"/>`);
+  return s;
+}
+document.querySelectorAll('[data-scene="phone"]').forEach(el=>{
+  let s=guitar(93,360,.7,62);
+  s+=hand(255,330,.5,-15,'var(--success)',1);
+  s+=hand(84,282,.62,160,'var(--warning)');
+  // wrist angle callout
+  s+=`<path d="M 84 282 L 52 236" stroke="var(--warning)" stroke-width="2.5" stroke-dasharray="4 4"/><path d="M 84 282 L 68 228" stroke="var(--warning)" stroke-width="2.5"/>`;
+  s+=`<path d="M 64 254 A 30 30 0 0 1 76 250" fill="none" stroke="var(--warning)" stroke-width="2"/>`;
+  s+=`<rect x="14" y="206" width="44" height="22" rx="11" fill="var(--warning)"/><text x="36" y="221.5" text-anchor="middle" style="font:700 12px 'Geist Mono';fill:#1c160f">38°</text>`;
+  s+=`<circle cx="84" cy="282" r="10" fill="none" stroke="var(--warning)" stroke-width="2.5"/>`;
+  el.innerHTML=s;
+});
+document.querySelectorAll('[data-scene="calib"]').forEach(el=>{
+  const R=70*Math.PI/180, SC=.68, OX=0, OY=380;
+  let s=guitar(OX,OY,SC,70);
+  // markers: nut (done) & 12th fret (pending)
+  const at=d=>[OX+d*Math.sin(R)*SC, OY-d*Math.cos(R)*SC];
+  const nut=at(470), f12=at(186.4);
+  s+=`<circle cx="${nut[0]}" cy="${nut[1]}" r="16" fill="color-mix(in oklch, var(--success) 35%, transparent)" stroke="var(--success)" stroke-width="2.5"/><path d="M ${nut[0]-6} ${nut[1]} l 4 4 l 8 -8" stroke="#fff" stroke-width="2.5" fill="none" stroke-linecap="round"/>`;
+  s+=`<text x="${nut[0]-8}" y="${nut[1]-26}" text-anchor="middle" style="font:600 12px Geist;fill:#fff">Cejuela</text>`;
+  s+=`<circle cx="${f12[0]}" cy="${f12[1]}" r="26" fill="none" stroke="var(--primary)" stroke-width="2" stroke-dasharray="5 5"/><circle cx="${f12[0]}" cy="${f12[1]}" r="16" fill="color-mix(in oklch, var(--primary) 30%, transparent)" stroke="var(--primary)" stroke-width="2.5"/>`;
+  s+=`<text x="${f12[0]}" y="${f12[1]-36}" text-anchor="middle" style="font:600 12px Geist;fill:var(--primary)">Traste 12</text>`;
+  s+=`<line x1="${nut[0]}" y1="${nut[1]}" x2="${f12[0]}" y2="${f12[1]}" stroke="#fff" stroke-opacity=".4" stroke-dasharray="3 5"/>`;
+  el.innerHTML=s;
+});
+
+/* tuner gauge */
+document.querySelectorAll('[data-gauge]').forEach(el=>{
+  const c=+el.dataset.gauge, cx=145, cy=140, R=118; let s='';
+  const pt=(a,r)=>[cx+r*Math.sin(a*Math.PI/180), cy-r*Math.cos(a*Math.PI/180)];
+  const arc=(a1,a2,r)=>{const [x1,y1]=pt(a1,r),[x2,y2]=pt(a2,r);return `M ${x1} ${y1} A ${r} ${r} 0 0 1 ${x2} ${y2}`};
+  s+=`<path d="${arc(-70,70,R)}" stroke="var(--muted)" stroke-width="10" fill="none" stroke-linecap="round"/>`;
+  s+=`<path d="${arc(-7,7,R)}" stroke="var(--success)" stroke-width="10" fill="none" stroke-linecap="round"/>`;
+  for(let v=-50;v<=50;v+=5){const a=v/50*70,[x1,y1]=pt(a,R-14),[x2,y2]=pt(a,R-(v%25?20:26));s+=`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="var(--muted-foreground)" stroke-opacity="${v%25?.4:.8}" stroke-width="1.5"/>`;}
+  [[-50,'-50'],[0,'0'],[50,'+50']].forEach(([v,t])=>{const [x,y]=pt(v/50*70,R-40);s+=`<text x="${x}" y="${y+4}" text-anchor="middle" style="font:500 10px 'Geist Mono';fill:var(--muted-foreground)">${t}</text>`});
+  const a=c/50*70,[nx,ny]=pt(a,R+4);
+  s+=`<line x1="${cx}" y1="${cy}" x2="${nx}" y2="${ny}" stroke="var(--success)" stroke-width="3" stroke-linecap="round" opacity="0"/>`;
+  const [tx,ty]=pt(a,R);s+=`<circle cx="${tx}" cy="${ty}" r="9" fill="var(--success)" stroke="var(--background)" stroke-width="3"/>`;
+  el.innerHTML=s;
+});
+
+/* timing deviation bars */
+document.querySelectorAll('[data-timing]').forEach(el=>{
+  const d=[8,14,-6,22,10,30,4,18,-12,26,12,38,6,16,2,24,-4,20,14,34,8,12,-2,18,10,28,6,16,0,22];
+  const W=270,mid=37,bw=W/d.length; let s=`<rect x="0" y="${mid-10}" width="${W}" height="20" fill="var(--success)" opacity=".1"/>`;
+  s+=`<line x1="0" x2="${W}" y1="${mid}" y2="${mid}" stroke="var(--muted-foreground)" stroke-opacity=".5"/>`;
+  d.forEach((v,i)=>{const h=Math.abs(v)*.8,y=v>0?mid-h:mid;s+=`<rect x="${i*bw+1.5}" y="${y}" width="${bw-3}" height="${Math.max(h,1.5)}" rx="1.5" fill="${Math.abs(v)>25?'var(--warning)':'var(--success)'}"/>`});
+  s+=`<text x="2" y="9" style="font:500 9px Geist;fill:var(--muted-foreground)">tarde</text><text x="2" y="72" style="font:500 9px Geist;fill:var(--muted-foreground)">antes</text>`;
+  el.innerHTML=s;
+});
+
+/* bpm over time */
+document.querySelectorAll('[data-bpm]').forEach(el=>{
+  const d=[50,50,52,50,55,55,55,57,55,58,60,58,60,60];
+  const W=270,H=104,pl=26,pb=16,y=v=>8+(H-pb-8)*(1-(v-45)/(85-45)),x=i=>pl+(W-pl-6)*i/(d.length-1);
+  let s='';
+  [50,60,70,80].forEach(v=>s+=`<line x1="${pl}" x2="${W}" y1="${y(v)}" y2="${y(v)}" stroke="var(--border)"/><text x="0" y="${y(v)+3}" style="font:500 9px 'Geist Mono';fill:var(--muted-foreground)">${v}</text>`);
+  s+=`<line x1="${pl}" x2="${W}" y1="${y(80)}" y2="${y(80)}" stroke="var(--primary)" stroke-dasharray="4 4" opacity=".7"/><text x="${W-2}" y="${y(80)-5}" text-anchor="end" style="font:600 9px Geist;fill:var(--primary)">meta 80</text>`;
+  const pts=d.map((v,i)=>`${x(i)},${y(v)}`).join(' ');
+  s+=`<polygon points="${x(0)},${y(45)} ${pts} ${x(d.length-1)},${y(45)}" fill="var(--primary)" opacity=".12"/>`;
+  s+=`<polyline points="${pts}" fill="none" stroke="var(--primary)" stroke-width="2.2" stroke-linejoin="round"/>`;
+  s+=`<circle cx="${x(d.length-1)}" cy="${y(60)}" r="4" fill="var(--primary)" stroke="var(--card)" stroke-width="2"/>`;
+  s+=`<text x="${pl}" y="${H-2}" style="font:500 9px Geist;fill:var(--muted-foreground)">5 oct</text><text x="${W}" y="${H-2}" text-anchor="end" style="font:500 9px Geist;fill:var(--muted-foreground)">hoy</text>`;
+  el.innerHTML=s;
+});
+
+/* practice heatmap */
+document.querySelectorAll('[data-heat]').forEach(el=>{
+  let s='',seed=7;const rnd=()=>(seed=(seed*9301+49297)%233280)/233280;
+  for(let i=0;i<112;i++){const recent=i>84; let v=i>=111?0: rnd()<(recent?.9:.55)? (recent?.45+rnd()*.55:.2+rnd()*.6):0;
+    s+=`<i style="${v?`background:color-mix(in oklch,var(--primary) ${Math.round(v*100)}%,var(--muted))`:''}${i===111?';box-shadow:0 0 0 1.5px var(--primary) inset':''}"></i>`;}
+  el.innerHTML=s;
+});
+
+/* theme toggle */
+const t=document.getElementById('toggle');
+t.onclick=()=>{const on=!document.querySelector('.gc').classList.contains('light');document.querySelectorAll('.gc').forEach(p=>p.classList.toggle('light',on));t.textContent=on?'Ver tema oscuro':'Ver tema claro';};
+</script>
+</body>
+</html>

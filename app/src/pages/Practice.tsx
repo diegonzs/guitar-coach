@@ -491,7 +491,7 @@ export default function Practice() {
             </div>
           ))}
         </Card>
-        {finishBtn}
+        <div className="flex shrink-0">{finishBtn}</div>
       </div>
 
       {/* bottom sheet on phones / tab strip on laptops */}
