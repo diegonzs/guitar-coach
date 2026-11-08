@@ -70,22 +70,8 @@ export function Tab({ music, fingers, cursor, states, statesRep, playhead, label
   for (let b = 0; b < bars; b += perSystem) systems.push(Array.from({ length: Math.min(perSystem, bars - b) }, (_, i) => b + i));
   const hasFingers = !!fingers?.some(Boolean);
   const playable = music.events.filter((e) => !e.rest);
-  /**
-   * How long each note keeps sounding (quarter position where its trail ends): until
-   * the same string is plucked again or the bar ends, whichever is first. That's how
-   * fingerstyle sounds: a bass note rings under the melody, arpeggios let ring.
-   */
-  const ringEnd = (() => {
-    const m = new Map<string, number>();
-    for (const e of playable) {
-      const barEnd = Math.min(music.length, music.events.find((o) => o.bar === e.bar + 1)?.start ?? (e.bar + 1) * barLen);
-      for (const n of e.notes) {
-        const again = playable.find((o) => o.start > e.start && o.notes.some((x) => x.string === n.string));
-        m.set(`${e.index}:${n.string}`, Math.max(e.start + e.duration, Math.min(barEnd, again?.start ?? Infinity)));
-      }
-    }
-    return m;
-  })();
+  /** Where each note's trail ends: its exact length from the score (voices / {lr}). */
+  const ringEnd = new Map(playable.flatMap((e) => e.notes.map((n) => [`${e.index}:${n.string}`, e.start + (n.sustain ?? e.duration)] as const)));
   const hasLabels = !!labels?.some(Boolean);
   const LABEL_Y = TOP + GAP * 5 + (hasFingers ? 33 : 16);
   const H = TOP + GAP * 5 + (hasFingers ? 24 : 10) + (hasLabels ? 16 : 0);
@@ -134,6 +120,17 @@ export function Tab({ music, fingers, cursor, states, statesRep, playhead, label
               const bx = b === 0 ? LEFT - 6 : LEFT + (usable * b) / sys.length - 2;
               return <line key={b} className="tab-bar" x1={bx} x2={bx} y1={TOP} y2={TOP + GAP * 5} />;
             })}
+            {evs.map((e) =>
+              e.rest
+                ? null
+                : e.notes.map((n) => {
+                    // ghost trail: shows ahead of time that this note must keep sounding past the next one
+                    const endQ = ringEnd.get(`${e.index}:${n.string}`) ?? e.start + e.duration;
+                    if (endQ <= e.start + e.duration + 1e-6) return null;
+                    const y = TOP + (n.string - 1) * GAP;
+                    return <line key={`g${e.index}:${n.string}`} className="tab-ghost" x1={x(e.start)} x2={Math.max(x(e.start) + 4, x(endQ) - 7)} y1={y} y2={y} />;
+                  }),
+            )}
             {pos !== null &&
               evs.map((e) => {
                 if (e.rest || e.start > pos + 0.001) return null;

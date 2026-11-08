@@ -51,8 +51,15 @@ como profesor de guitarra del usuario. Puedes pegarlo como prompt o, si tu herra
 ## Reglas
 
 - Música en el subconjunto de alphaTex documentado; cuerda 1 = Mi agudo; traste.cuerda.
-- La digitación (`fingering`) debe tener tantos símbolos como golpes (o un divisor) y, en
-  acordes, tantos dedos como notas (`p+m`).
+- **Escribe cuánto dura cada nota**: la app dibuja una estela por nota que le indica al alumno
+  cuánto tiempo mantenerla sonando, y la saca de la partitura, no la adivina.
+  - Bajo + melodía → dos voces (`\voice` antes de **cada** voz): la melodía con sus figuras y
+    el bajo con las suyas (p. ej. `:1` si se sostiene todo el compás).
+  - Arpegios y notas que se dejan sonar → `{lr}` en cada nota (`0.5{lr}`).
+  - Si no indicas nada, cada nota dura su figura (una corchea seguida de otra suena una corchea).
+- La digitación (`fingering`) cuenta los golpes **después de juntar las voces**: notas de
+  distintas voces que empiezan a la vez son un solo golpe (`p+a`). Debe tener tantos símbolos
+  como golpes (o un divisor) y, en acordes, tantos dedos como notas.
 - No publiques material con copyright en el repositorio. `curriculum/` es privado (gitignored);
   aun así, para piezas comerciales prefiere ejercicios preparatorios propios y recomienda la
   partitura oficial.

@@ -10,7 +10,11 @@
  *   chords     (0.5 2.3 1.2)          optional duration: (0.5 2.3).4
  *   rests      r   r.4
  *   repeat     beat*N                 e.g. 0.1*4
- *   effects    {d} dotted, {tu 3} triplet; articulation effects (h, p, sl, v, lf, rf, nh…) are accepted and ignored
+ *   effects    {d} dotted, {tu 3} triplet, {lr} let ring (note effect: 0.5{lr}, (0.5{lr} 2.3{lr}), 0.5{lr}.4);
+ *              articulation effects (h, p, sl, v, lf, rf, nh…) are accepted and ignored
+ *   voices     \voice before EACH voice (also the first): voices run in parallel, e.g. a melody
+ *              in eighths and a bass in dotted halves. Beats starting together are merged into
+ *              one event; every note keeps its own length in `sustain`.
  *   bars       |
  *   comments   // line   /* block *\/
  */
@@ -20,6 +24,14 @@ export interface MusicNote {
   string: number;
   fret: number;
   midi: number;
+  /**
+   * How long the note should keep sounding, in quarter notes: its written length (from
+   * its own voice), or until the end of the bar with {lr}; always cut when the same
+   * string is plucked again.
+   */
+  sustain?: number;
+  /** Written with {lr} (let ring). */
+  letRing?: boolean;
 }
 
 export interface MusicEvent {
@@ -29,7 +41,7 @@ export interface MusicEvent {
   bar: number;
   /** Start position measured in quarter notes from the beginning. */
   start: number;
-  /** Duration in quarter notes. */
+  /** Time until the next event (or the end), in quarter notes. Per-note lengths are in `notes[].sustain`. */
   duration: number;
   notes: MusicNote[];
   rest: boolean;
@@ -43,6 +55,8 @@ export interface ParsedMusic {
   bars: number;
   /** Total length in quarter notes. */
   length: number;
+  /** Number of voices (1 unless \voice is used). */
+  voices: number;
 }
 
 export interface TexIssue {
@@ -64,7 +78,7 @@ const IGNORED_EFFECTS = new Set([
   "g", "gr", "ac", "hac", "pm", "st", "lr", "tr", "x", "t", "su", "sd", "f", "fo", "cre", "dec", "txt",
   "dy", "tt", "sib",
 ]);
-const KNOWN_META = new Set(["title", "subtitle", "artist", "album", "words", "music", "copyright", "tempo", "ts", "tuning", "instrument", "capo", "tab", "track", "staff"]);
+const KNOWN_META = new Set(["title", "subtitle", "artist", "album", "words", "music", "copyright", "tempo", "ts", "tuning", "instrument", "capo", "tab", "track", "staff", "voice"]);
 
 type Tok =
   | { t: "meta"; v: string; line: number; col: number }
@@ -165,12 +179,18 @@ export function parseAlphaTex(src: string): { music: ParsedMusic; issues: TexIss
   const err = (tok: Tok | undefined, message: string, level: "error" | "warning" = "error") =>
     issues.push({ level, message, line: tok?.line ?? 0, column: tok?.col ?? 0 });
 
-  const music: ParsedMusic = { timeSignature: [4, 4], events: [], bars: 0, length: 0 };
+  const music: ParsedMusic = { timeSignature: [4, 4], events: [], bars: 0, length: 0, voices: 1 };
+  let multiVoice = false;
 
   // ---- metadata ----
   const META_NUM_ARGS: Record<string, number> = { tempo: 1, ts: 2, capo: 1 };
   while (peek()?.t === "meta") {
     const m = toks[p++] as Extract<Tok, { t: "meta" }>;
+    if (m.v === "voice") {
+      // first voice starts: the body begins here
+      multiVoice = true;
+      break;
+    }
     const args: Tok[] = [];
     const nNum = META_NUM_ARGS[m.v];
     if (nNum !== undefined) {
@@ -204,6 +224,20 @@ export function parseAlphaTex(src: string): { music: ParsedMusic; issues: TexIss
   if (peek()?.t === "sym" && peek()!.v === ".") p++; // optional metadata separator
 
   // ---- body ----
+  interface RawBeat {
+    voice: number;
+    bar: number;
+    start: number;
+    dur: number;
+    notes: MusicNote[];
+    rest: boolean;
+  }
+  const raw: RawBeat[] = [];
+  /** Start of every bar, per voice (plus the end), to know where a let-ring note stops. */
+  const barStarts: number[][] = [[0]];
+  let voice = 0;
+  let maxBars = 0;
+  let maxPos = 0;
   let defaultDur = 4;
   let pos = 0;
   let bar = 0;
@@ -252,14 +286,15 @@ export function parseAlphaTex(src: string): { music: ParsedMusic; issues: TexIss
     return { string: s.v, fret: f.v, midi: fretToMidi(s.v, f.v) };
   };
 
-  const readBeatEffects = (): { dotted: boolean; tuplet?: number } => {
-    const out: { dotted: boolean; tuplet?: number } = { dotted: false };
+  const readBeatEffects = (): { dotted: boolean; tuplet?: number; letRing?: boolean } => {
+    const out: { dotted: boolean; tuplet?: number; letRing?: boolean } = { dotted: false };
     while (peek()?.t === "sym" && peek()!.v === "{") {
       const open = toks[p++]!;
       while (peek() && !(peek()!.t === "sym" && peek()!.v === "}")) {
         const e = toks[p++]!;
         if (e.t === "word") {
           if (e.v === "d") out.dotted = true;
+          else if (e.v === "lr") out.letRing = true;
           else if (e.v === "tu") {
             const n = toks[p];
             if (n?.t === "num" && (n.v === 3 || n.v === 5 || n.v === 6 || n.v === 7)) {
@@ -289,7 +324,7 @@ export function parseAlphaTex(src: string): { music: ParsedMusic; issues: TexIss
       } else err(tok, "Repetición inválida: usa beat*N con N entre 1 y 64");
     }
     for (let k = 0; k < times; k++) {
-      music.events.push({ index: music.events.length, bar, start: round(pos), duration: round(q), notes: notes.map((n) => ({ ...n })), rest });
+      raw.push({ voice, bar, start: round(pos), dur: round(q), notes: notes.map((n) => ({ ...n })), rest });
       pos += q;
     }
   };
@@ -316,7 +351,8 @@ export function parseAlphaTex(src: string): { music: ParsedMusic; issues: TexIss
       while (peek() && !(peek()!.t === "sym" && peek()!.v === ")")) {
         if (peek()!.t === "sym" && peek()!.v === "{") {
           // note-level effects inside chord
-          readBeatEffects();
+          const fx = readBeatEffects();
+          if (fx.letRing && notes.length) notes[notes.length - 1]!.letRing = true;
           continue;
         }
         const n = readNote();
@@ -332,6 +368,7 @@ export function parseAlphaTex(src: string): { music: ParsedMusic; issues: TexIss
       if (!notes.length) err(tok, "Acorde vacío");
       const dur = readDuration() ?? defaultDur;
       const fx = readBeatEffects();
+      if (fx.letRing) for (const n of notes) n.letRing = true;
       pushBeat(notes, false, dur, fx, tok);
       continue;
     }
@@ -344,9 +381,27 @@ export function parseAlphaTex(src: string): { music: ParsedMusic; issues: TexIss
     }
     if (tok.t === "num" || (tok.t === "word" && tok.v === "x")) {
       const n = readNote();
+      // note effects (0.5{lr}.4), then duration, then beat effects (0.5.4{d})
+      const nfx = readBeatEffects();
       const dur = readDuration() ?? defaultDur;
-      const fx = readBeatEffects();
+      const bfx = readBeatEffects();
+      const fx = { dotted: nfx.dotted || bfx.dotted, tuplet: bfx.tuplet ?? nfx.tuplet, letRing: nfx.letRing || bfx.letRing };
+      if (n && fx.letRing) n.letRing = true;
       if (n) pushBeat([n], false, dur, fx, tok);
+      continue;
+    }
+    if (tok.t === "meta" && tok.v === "voice") {
+      p++;
+      if (!multiVoice) {
+        err(tok, "Para usar varias voces escribe \\voice también antes de la primera voz (si no, alphaTab lo lee como compases nuevos)");
+        multiVoice = true;
+      }
+      endVoice();
+      voice++;
+      barStarts.push([0]);
+      pos = 0;
+      bar = 0;
+      barStart = 0;
       continue;
     }
     if (tok.t === "meta") {
@@ -358,7 +413,13 @@ export function parseAlphaTex(src: string): { music: ParsedMusic; issues: TexIss
     err(tok, `No se entiende "${"v" in tok ? tok.v : ""}"`);
     p++;
   }
-  if (round(pos) > round(barStart)) checkBar(undefined, true);
+  endVoice();
+
+  function endVoice() {
+    if (round(pos) > round(barStart)) checkBar(undefined, true);
+    maxBars = Math.max(maxBars, bar);
+    maxPos = Math.max(maxPos, round(pos));
+  }
 
   function checkBar(tok: Tok | undefined, last = false) {
     const len = round(pos - barStart);
@@ -370,10 +431,47 @@ export function parseAlphaTex(src: string): { music: ParsedMusic; issues: TexIss
     }
     bar++;
     barStart = pos;
+    barStarts[voice]!.push(round(pos));
   }
 
-  music.bars = bar;
-  music.length = round(pos);
+  music.bars = maxBars;
+  music.length = maxPos;
+  music.voices = voice + 1;
+  mergeVoices();
+
+  /** Beats that start together (in any voice) become one event; each note keeps its own length. */
+  function mergeVoices() {
+    const groups = new Map<number, RawBeat[]>();
+    for (const b of raw) groups.set(b.start, [...(groups.get(b.start) ?? []), b]);
+    const starts = [...groups.keys()].sort((a, b) => a - b);
+    for (const start of starts) {
+      const g = groups.get(start)!;
+      const sounding = g.filter((b) => !b.rest);
+      // a rest only counts in the first voice; rests in other voices just fill time
+      if (!sounding.length && !g.some((b) => b.voice === 0)) continue;
+      const notes: MusicNote[] = [];
+      for (const b of sounding)
+        for (const n of b.notes) {
+          if (notes.some((x) => x.string === n.string)) err(undefined, `Dos voces tocan la cuerda ${n.string} a la vez (pulso ${fmt(start)} del ejercicio)`);
+          else {
+            const vb = barStarts[b.voice]!;
+            const barEnd = vb[b.bar + 1] ?? Math.max(maxPos, b.start + b.dur);
+            notes.push({ ...n, sustain: n.letRing ? round(Math.max(b.dur, barEnd - b.start)) : b.dur });
+          }
+        }
+      music.events.push({ index: music.events.length, bar: Math.min(...g.map((b) => b.bar)), start, duration: 0, notes, rest: !notes.length });
+    }
+    music.events.forEach((e, i) => {
+      const next = music.events[i + 1];
+      const end = Math.max(...(groups.get(e.start) ?? []).map((b) => b.start + b.dur));
+      e.duration = round((next ? next.start : end) - e.start);
+      // a string stops ringing when it is plucked again
+      for (const n of e.notes) {
+        const again = music.events.find((o) => o.start > e.start && o.notes.some((x) => x.string === n.string));
+        if (again && n.sustain !== undefined) n.sustain = round(Math.min(n.sustain, again.start - e.start));
+      }
+    });
+  }
   if (!music.events.length) issues.push({ level: "error", message: "El ejercicio no tiene notas", line: 1, column: 1 });
   else if (music.events.every((e) => e.rest)) issues.push({ level: "error", message: "El ejercicio solo tiene silencios", line: 1, column: 1 });
   return { music, issues };

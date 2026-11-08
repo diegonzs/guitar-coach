@@ -125,6 +125,8 @@ compara nuestro parser con el oficial de alphaTab. Afinación estándar, cuerda 
 | `0.1*4` | repetir el golpe 4 veces |
 | `3.2.4{d}` | con puntillo |
 | `0.1{tu 3}` | tresillo |
+| `0.5{lr}` | dejar sonar (*let ring*): suena hasta el final del compás; en acordes `(0.5{lr} 2.3{lr})`, con duración `0.5{lr}.4` |
+| `\voice` | empieza una voz; va antes de **cada** voz, también la primera (ver abajo) |
 | `\|` | barra de compás |
 | `// comentario` | comentario |
 
@@ -132,11 +134,32 @@ Los efectos de articulación (`h`, `p`, `sl`, `v`, `lf`, `rf`, `nh`…) se acept
 todavía no los evalúa. `\tempo` se ignora: manda `tempo.start`. No se admiten notas muertas (`x`)
 porque no se pueden evaluar.
 
-**Cuánto suena cada nota en pantalla.** La tablatura es de una sola voz, así que la duración
-de un golpe es solo la distancia hasta el siguiente. Al practicar, cada nota dibuja una estela
-que dura hasta que **se vuelve a tocar la misma cuerda o termina el compás** (lo que llegue
-antes): así un bajo suena bajo la melodía y los arpegios se dejan sonar, como en fingerstyle.
-No hace falta escribir nada especial para eso.
+### Cuánto dura cada nota
+
+Al practicar, cada nota dibuja una estela que le dice al alumno **cuánto tiempo mantenerla
+sonando** (y las notas largas se ven de antemano en gris). Esa duración sale de la partitura:
+
+- **Una voz:** cada nota dura su figura. `:4 0.1 0.1` → dos negras.
+- **Dejar sonar:** `{lr}` hace que la nota suene hasta el final del compás. Es lo normal en
+  arpegios: `:8 0.5{lr} 2.3{lr} 1.2{lr} 0.1{lr} 1.2{lr} 2.3{lr}`.
+- **Varias voces:** para un bajo que se sostiene bajo la melodía, escribe cada parte en su voz.
+  Las voces corren en paralelo y cada una tiene sus compases:
+
+  ```
+  \ts 4 4
+  \voice // melodía
+  :4 0.1 0.1 1.1 3.1 | 3.1 1.1 0.1 3.2
+  \voice // bajo: redondas, suenan todo el compás
+  :1 3.5 | 3.6
+  ```
+
+  Las notas que empiezan a la vez en distintas voces forman **un solo golpe** (para la
+  digitación y la evaluación): el ejemplo tiene los mismos 8 golpes que
+  `:4 (0.1 3.5) 0.1 1.1 3.1 | (3.1 3.6) 1.1 0.1 3.2`, pero ahora la app sabe que el bajo dura
+  todo el compás. `\voice` va antes de **cada** voz, también la primera: sin él, alphaTab lee la
+  segunda voz como compases nuevos (el validador lo marca como error). Dos voces no pueden
+  tocar la misma cuerda a la vez.
+- En todos los casos, una cuerda deja de sonar cuando se vuelve a pulsar.
 
 > **Derechos de autor:** usa melodías de dominio público o tus propios ejercicios. No copies
 > arreglos ajenos en un repositorio público; el currículo personal (`curriculum/`) no se publica.
