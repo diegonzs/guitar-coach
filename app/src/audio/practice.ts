@@ -72,6 +72,12 @@ export interface PracticeState {
   vision: "off" | "loading" | "on" | "error";
   visionError?: string;
   freeNotes: number;
+  /**
+   * Why we can't hear you, if that's the case:
+   * "muted"/"stalled" = the system cut the mic or the audio engine; "quiet" = sound
+   * arrives but nothing louder than the room for a while (mic covered, far, wrong input).
+   */
+  micIssue: "muted" | "stalled" | "quiet" | null;
 }
 
 export interface PracticeConfig {
@@ -126,6 +132,7 @@ export class PracticeRun {
     postureWarnings: [],
     vision: "off",
     freeNotes: 0,
+    micIssue: null,
   };
 
   private metronome: Metronome | null = null;
@@ -263,6 +270,13 @@ export class PracticeRun {
       this.unsubscribeAudio = audio.onBlock((b) => {
         if (!this.detector) return;
         if (this.anchorFrame === null) this.anchorFrame = b.frame;
+        else if (b.frame !== this.anchorFrame + this.detector.position) {
+          // audio was interrupted (suspended context, reopened mic): restart the detector
+          // anchored at the new block so onset times stay on the context clock
+          this.detector = new OnsetDetector(audio.sampleRate);
+          this.anchorFrame = b.frame;
+        }
+        if (audio.level > 0.006) this.lastLoudAt = audio.now();
         for (const o of this.detector.push(b.samples)) this.onOnset(o);
       });
       this.timer = setInterval(() => this.tick(), 50);
@@ -295,6 +309,7 @@ export class PracticeRun {
       const near = [...expectedForRep(ex.music, ex.fingers, rep, this.cfg.bpm, this.beatUnit), ...expectedForRep(ex.music, ex.fingers, rep + 1, this.cfg.bpm, this.beatUnit)];
       if (isClickEcho(t, clicks, near)) return;
     }
+    this.lastHeardAt = audio.now();
     this.set({ lastHeard: { midi: o.midi, t } });
     if (this.matcher) {
       const onset = { t, salience: o.salience, present: o.present, midi: o.midi };
@@ -327,7 +342,47 @@ export class PracticeRun {
     this.set({ repStates: states });
   }
 
+  private lastLoudAt = 0;
+  private lastHeardAt = 0;
+  private badSince: number | null = null;
+  private lastRecover = 0;
+
+  /** Keeps an eye on the mic: tries to recover by itself and tells the player when it can't. */
+  private watchMic() {
+    const t = audio.now();
+    const wall = performance.now();
+    const status = audio.micStatus();
+    let issue: PracticeState["micIssue"] = null;
+    if (status === "muted" || status === "stalled" || status === "off") {
+      this.badSince ??= wall;
+      if (wall - this.lastRecover > 1000) {
+        this.lastRecover = wall;
+        void audio.recover();
+      }
+      if (wall - this.badSince > 1200) issue = status === "stalled" ? "stalled" : "muted";
+    } else {
+      this.badSince = null;
+      // 7 s into the music without anything louder than the room and no notes heard
+      const since = Math.max(this.firstBeat, this.lastLoudAt, this.lastHeardAt);
+      if (this.cfg.kind !== "free" && this.state.phase === "running" && t - since > 7) issue = "quiet";
+    }
+    if (issue !== this.state.micIssue) this.set({ micIssue: issue });
+  }
+
+  /** Reopens the mic from a tap (iOS needs the gesture). */
+  restartMic = async () => {
+    try {
+      await audio.restartMic();
+      this.lastLoudAt = audio.now();
+      this.badSince = null;
+      this.set({ micIssue: null });
+    } catch (e) {
+      this.set({ micIssue: "muted", error: String((e as Error)?.message ?? e) });
+    }
+  };
+
   private tick() {
+    this.watchMic();
     const now = this.musicNow();
     this.set({ elapsed: Math.max(0, audio.now() - this.firstBeat) });
     const ex = this.cfg.exercise;
@@ -427,6 +482,8 @@ export class PracticeRun {
   }
 
   private cue(level: Cue["level"], title: string, detail: string | undefined, spoken: string | null, key: string, cooldownSec = 0) {
+    // with no sound reaching us, "that note isn't sounding" would blame the player for the mic
+    if (this.state.micIssue && !key.startsWith("posture")) return;
     const t = this.musicNow();
     const last = this.cueCooldown.get(key);
     if (last !== undefined && t - last < cooldownSec) return;

@@ -128,9 +128,13 @@ export class OnsetDetector {
       if (d > 0) flux += d;
       this.prevSpec[k] = c;
     }
-    // slow noise floor follower (fast down, slow up)
-    this.noiseFloor = rms < this.noiseFloor ? 0.9 * this.noiseFloor + 0.1 * rms : this.noiseFloor * 1.0015;
-    this.noiseFloor = Math.max(this.noiseFloor, 0.0005);
+    // Background-noise follower: fast down, slow up, and it only rises while the input
+    // is close to it (room noise). A ringing note is far above it and must not raise it:
+    // in let-ring arpeggios the signal never drops back, and a floor that crept up with
+    // it ended up rejecting every new pluck as "noise" after a few seconds of playing.
+    if (rms < this.noiseFloor) this.noiseFloor = 0.9 * this.noiseFloor + 0.1 * rms;
+    else if (rms < 2 * this.noiseFloor) this.noiseFloor *= 1.0005;
+    this.noiseFloor = Math.min(Math.max(this.noiseFloor, 0.0005), 0.02);
 
     // the hop's centre is roughly where the energy changed
     this.fluxHist.push({ frame: end - this.hop, flux, rms });
@@ -152,14 +156,27 @@ export class OnsetDetector {
     const since = (c.frame - this.lastOnsetFrame) / this.sampleRate;
     const masking = Number.isFinite(since) ? 0.35 * this.lastOnsetFlux * Math.exp(-since / 0.12) : 0;
     const threshold = Math.max(median * this.sensitivity + 10, masking);
-    if (c.flux < threshold) return;
     const after = Math.max(h[i]!.rms, h[i + 1]!.rms, h[i + 2]!.rms);
+    const before = Math.max(h[i - 3]!.rms, h[i - 2]!.rms);
+    // A soft pluck from silence can have modest flux but always a big jump in loudness.
+    const jump = after > 4 * before && c.flux >= 0.6 * threshold;
+    if (c.flux < threshold && !jump) return;
     if (after < Math.max(this.noiseFloor * 4, 0.004)) return;
     // A note being damped or ending also changes the spectrum; a real attack never
     // makes the signal noticeably quieter.
-    const before = Math.max(h[i - 3]!.rms, h[i - 2]!.rms);
     if (after < 0.95 * before) return;
-    if (c.frame - this.lastOnsetFrame < this.minGapFrames) return;
+    if (c.frame - this.lastOnsetFrame < this.minGapFrames) {
+      // The finger touching the string just before the pluck makes a small onset; when
+      // the real attack follows within the gap, it replaces it (it is still pending).
+      const last = this.pendingPitch[this.pendingPitch.length - 1];
+      if (last && last.frame === this.lastOnsetFrame && (after > 3 * last.level || (c.flux > 1.5 * this.lastOnsetFlux && after > 1.5 * last.level))) {
+        last.frame = c.frame;
+        last.level = after;
+        this.lastOnsetFrame = c.frame;
+        this.lastOnsetFlux = c.flux;
+      }
+      return;
+    }
     this.lastOnsetFrame = c.frame;
     this.lastOnsetFlux = c.flux;
     this.pendingPitch.push({ frame: c.frame, level: after });

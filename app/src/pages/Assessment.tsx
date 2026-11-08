@@ -22,6 +22,7 @@ import { audio } from "@/audio/engine";
 import { PracticeRun } from "@/audio/practice";
 import { Prose } from "@/pages/LessonDetail";
 import { cn } from "@/lib/utils";
+import { MicIssue, MicLevel } from "@/components/MicStatus";
 
 type Stage = "intro" | "questions" | "task" | "result";
 
@@ -345,6 +346,8 @@ export default function Assessment() {
           <Beats count={bpb} active={st.beatInBar} />
           <span className="text-sm text-muted-foreground">{st.phase === "countin" ? "Prepárate…" : `Repetición ${Math.min(st.rep + 1, task.reps)} de ${task.reps}`}</span>
           {st.phase === "running" && <LiveVerdict v={st.lastVerdict} />}
+          <MicLevel />
+          <MicIssue issue={st.micIssue} onRestart={() => void run?.restartMic()} className="w-full" />
         </div>
       )}
 

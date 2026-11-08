@@ -56,6 +56,29 @@ describe("onset detector", () => {
     on.forEach((o, i) => expect(Math.abs(o.frame - (SR * 0.2 + i * step)) / SR).toBeLessThan(0.015));
   });
 
+  test("long let-ring arpeggio keeps being heard (noise floor must not creep up with the music)", () => {
+    // 16 s of p-i-m-a at 60 BPM eighths with every note left ringing for 3 s, quite soft:
+    // the signal never falls back to the room noise between plucks.
+    const pattern = [45, 57, 60, 64, 60, 57];
+    const seq = Array.from({ length: 32 }, (_, i) => pattern[i % pattern.length]!);
+    const step = 0.5 * SR;
+    const sig = noise(Math.round(step * seq.length + SR), 0.0015);
+    seq.forEach((m, i) => mixInto(sig, pluck(midiToFreq(m), SR, 3, { seed: i * 7 + 1, decay: 0.9993, gain: 0.25 }), Math.round(SR * 0.3 + i * step)));
+    const on = run(sig);
+    expect(on.length).toBe(seq.length);
+    on.forEach((o, i) => expect(Math.abs(o.frame - (SR * 0.3 + i * step)) / SR).toBeLessThan(0.015));
+  });
+
+  test("a small touch right before the pluck is replaced by the real attack", () => {
+    const sig = noise(SR, 0.0008);
+    mixInto(sig, pluck(midiToFreq(76), SR, 0.03, { seed: 3, gain: 0.08 }), 12000); // finger brushing the string
+    mixInto(sig, pluck(midiToFreq(59), SR, 0.8, { seed: 5 }), 12000 + Math.round(0.04 * SR));
+    const on = run(sig);
+    expect(on.length).toBe(1);
+    expect(on[0]!.midi).toBe(59);
+    expect(Math.abs(on[0]!.frame - (12000 + 0.04 * SR)) / SR).toBeLessThan(0.012);
+  });
+
   test("chord onsets contain every note", () => {
     const sig = noise(SR, 0.0008);
     for (const m of [45, 60]) mixInto(sig, pluck(midiToFreq(m), SR, 0.9, { seed: m }), 12000);

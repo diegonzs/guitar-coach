@@ -18,6 +18,7 @@ import { RemoteCameraViewer, type RtcStatus } from "@/lib/rtc";
 import { audio } from "@/audio/engine";
 import { PracticeRun, type Cue, type PracticeState } from "@/audio/practice";
 import { cn } from "@/lib/utils";
+import { MicIssue, MicLevel } from "@/components/MicStatus";
 
 // ---------------------------------------------------------------------------
 // camera
@@ -418,8 +419,10 @@ export default function Practice() {
         <div className="flex items-center justify-center gap-3">
           <Beats count={bpb} active={st.beatInBar} />
           <span className="font-mono text-sm text-muted-foreground">{bpm} BPM</span>
+          <MicLevel />
         </div>
         {countIn !== null && <p className="text-center text-sm text-muted-foreground">Prepárate… empieza en el 1</p>}
+        <MicIssue issue={st.micIssue} onRestart={() => void run?.restartMic()} />
         <div>
           <div className="eyebrow mb-2 text-center">Últimas notas</div>
           <NoteChips st={st} tol={exercise?.timingToleranceMs} />
@@ -455,12 +458,15 @@ export default function Practice() {
             {fmtTime(st.elapsed)}
           </span>
           <Beats count={bpb} active={st.beatInBar} />
-          <span className="glass font-mono">{bpm} BPM</span>
+          <span className="glass font-mono">
+            {bpm} BPM <MicLevel dark className="ml-1" />
+          </span>
         </div>
         {countIn !== null && <div className="absolute inset-0 grid place-items-center"><span className="display text-[140px] text-white/90 drop-shadow-lg">{countIn}</span></div>}
         <div className="absolute inset-x-3 top-[calc(max(env(safe-area-inset-top),0.75rem)+3rem)] flex flex-col gap-2">
           {st.vision === "loading" && <span className="glass self-start">Cargando detección de postura…</span>}
           {st.vision === "error" && <span className="glass self-start text-warning">Postura no disponible: {st.visionError}</span>}
+          <MicIssue issue={st.micIssue} onRestart={() => void run?.restartMic()} className="pointer-events-auto lg:max-w-md" />
           <CueToast cue={st.cue} className="lg:max-w-md" />
         </div>
         <span className="glass absolute bottom-3 left-3 hidden lg:inline-flex">
