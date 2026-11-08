@@ -185,11 +185,15 @@ export class PracticeRun {
    */
   playhead = (): { rep: number; pos: number } | null => {
     const ex = this.cfg.exercise;
-    if (!ex || this.state.phase !== "running") return null;
+    if (!ex || (this.state.phase !== "running" && this.state.phase !== "countin")) return null;
     const t = audio.now() - this.firstBeat - audio.outputDelay();
     const rl = repLength(ex.music, this.cfg.bpm, this.beatUnit);
     const maxReps = this.cfg.maxReps ?? (ex.loop ? Infinity : 1);
-    if (t < 0 || t >= rl * maxReps) return null;
+    const spq = secondsPerQuarter(this.cfg.bpm, this.beatUnit);
+    // negative positions during the last count-in beat let the first note's approach ring show
+    if (t < -spq) return null;
+    if (t < 0) return { rep: 0, pos: t / spq };
+    if (t >= rl * maxReps) return null;
     const rep = Math.floor(t / rl);
     return { rep, pos: (t - rep * rl) / secondsPerQuarter(this.cfg.bpm, this.beatUnit) };
   };
