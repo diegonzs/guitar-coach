@@ -50,6 +50,8 @@ export default function Assessment() {
   const empty = useMemo(() => new PracticeRun({ kind: "assessment", mode: "audio", bpm: 60 }), []);
   const st = useSyncExternalStore((run ?? empty).subscribe, (run ?? empty).getState);
   useEffect(() => () => void run?.cancel(), [run]);
+  // give the mic back when leaving, so iOS plays sound on the loudspeaker again
+  useEffect(() => () => audio.releaseMic(), []);
 
   if (curriculum === undefined) return null;
   if (curriculum === null)

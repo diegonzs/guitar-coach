@@ -25,6 +25,7 @@ async function withClicks<T>(bpm: number, count: number, collect: (clicks: numbe
   await new Promise((r) => setTimeout(r, ((count * 60) / bpm + 1.2) * 1000));
   m.dispose();
   off();
+  audio.releaseMic();
   return c.done();
 }
 

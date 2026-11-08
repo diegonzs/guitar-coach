@@ -96,7 +96,7 @@ export function createApp(cfg: Config) {
       if (req.method === "GET" || req.method === "HEAD") {
         const info = await store.fileInfo(id, name);
         if (!info) return json({ error: "No existe" }, 404);
-        return new Response(Bun.file(info.path), { headers: { "cache-control": "private, max-age=3600" } });
+        return fileResponse(req, info.path, { "cache-control": "private, max-age=3600" });
       }
     }
 
@@ -121,6 +121,32 @@ export function createApp(cfg: Config) {
     }
 
     return json({ error: "No encontrado" }, 404);
+  }
+
+  /**
+   * Serves a file honouring `Range` requests. iOS Safari only plays <audio>/<video> from
+   * servers that answer byte ranges with 206; without it the player just stays silent.
+   */
+  function fileResponse(req: Request, path: string, headers: Record<string, string>): Response {
+    const file = Bun.file(path);
+    const size = file.size;
+    const base = { ...headers, "accept-ranges": "bytes", "content-type": file.type };
+    const range = /^bytes=(\d*)-(\d*)$/.exec(req.headers.get("range") ?? "");
+    if (!range || (!range[1] && !range[2])) return new Response(file, { headers: base });
+    let start: number;
+    let end: number;
+    if (!range[1]) {
+      start = Math.max(0, size - Number(range[2]));
+      end = size - 1;
+    } else {
+      start = Number(range[1]);
+      end = range[2] ? Math.min(Number(range[2]), size - 1) : size - 1;
+    }
+    if (start >= size || start > end) return new Response(null, { status: 416, headers: { ...base, "content-range": `bytes */${size}` } });
+    return new Response(file.slice(start, end + 1), {
+      status: 206,
+      headers: { ...base, "content-range": `bytes ${start}-${end}/${size}`, "content-length": String(end - start + 1) },
+    });
   }
 
   async function staticFile(url: URL): Promise<Response> {

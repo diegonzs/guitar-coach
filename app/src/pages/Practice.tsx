@@ -199,6 +199,8 @@ export default function Practice() {
 
   // stop everything if the user leaves mid-run
   useEffect(() => () => void run?.cancel(), [run]);
+  // give the mic back when leaving, so iOS plays sound on the loudspeaker again
+  useEffect(() => () => audio.releaseMic(), []);
 
   async function start() {
     primeSpeech();

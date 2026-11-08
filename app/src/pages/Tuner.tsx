@@ -99,6 +99,8 @@ export default function Tuner() {
     };
   }, [on, mode, target]);
 
+  useEffect(() => () => audio.releaseMic(), []);
+
   async function enable() {
     try {
       await audio.startMic();

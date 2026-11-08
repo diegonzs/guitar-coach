@@ -77,10 +77,28 @@ class AudioEngine {
       const mute = ctx.createGain();
       mute.gain.value = 0;
       this.source.connect(this.capture).connect(mute).connect(ctx.destination);
+      // what gets recorded: iOS hands MediaRecorder a stereo file with the guitar only in
+      // the left channel; a Web Audio destination upmixes the mono mic to both channels
+      this.source.connect(this.recordDest(ctx));
       this.lastBlockAt = performance.now();
       this.emitStatus();
     })().finally(() => (this.starting = null));
     return this.starting;
+  }
+
+  private recDest: MediaStreamAudioDestinationNode | null = null;
+  private recordDest(ctx: AudioContext) {
+    if (!this.recDest) {
+      this.recDest = ctx.createMediaStreamDestination();
+      this.recDest.channelCount = 2;
+    }
+    return this.recDest;
+  }
+
+  /** Audio to record: the mic in both channels; it keeps going if the mic is reopened. */
+  recordingTracks(): MediaStreamTrack[] {
+    if (this.recDest) return this.recDest.stream.getAudioTracks();
+    return this.mic?.getAudioTracks() ?? [];
   }
 
   /** Closes and reopens the mic. Call it from a tap: iOS only reopens capture on a user gesture. */
@@ -102,6 +120,16 @@ class AudioEngine {
     this.capture = null;
     this.level = 0;
     this.emitStatus();
+  }
+
+  /**
+   * Closes the mic when leaving a screen that listens. While iOS keeps the mic open it
+   * routes all sound to the quiet earpiece speaker, so recordings seemed silent.
+   */
+  releaseMic() {
+    if (!this.mic) return;
+    this.stopMic();
+    void this.ctx?.suspend().catch(() => {});
   }
 
   /** Smoothed RMS of the mic input (0…1), for level meters. */

@@ -83,6 +83,15 @@ describe("api", () => {
     expect((await put.json()).size).toBe(4);
     const get = await call("/api/sessions/sess-000001/files/audio.webm");
     expect(new Uint8Array(await get.arrayBuffer())).toEqual(new Uint8Array([1, 2, 3, 4]));
+    expect(get.headers.get("accept-ranges")).toBe("bytes");
+    // iOS Safari plays media only from servers that answer byte ranges
+    const part = await call("/api/sessions/sess-000001/files/audio.webm", { headers: { range: "bytes=1-2" } });
+    expect(part.status).toBe(206);
+    expect(part.headers.get("content-range")).toBe("bytes 1-2/4");
+    expect(new Uint8Array(await part.arrayBuffer())).toEqual(new Uint8Array([2, 3]));
+    const tail = await call("/api/sessions/sess-000001/files/audio.webm", { headers: { range: "bytes=-1" } });
+    expect(new Uint8Array(await tail.arrayBuffer())).toEqual(new Uint8Array([4]));
+    expect((await call("/api/sessions/sess-000001/files/audio.webm", { headers: { range: "bytes=9-" } })).status).toBe(416);
     const big = await call("/api/sessions/sess-000001/files/big.webm", { method: "PUT", body: new Uint8Array(2 * 1024 * 1024) });
     expect(big.status).toBe(413);
   });

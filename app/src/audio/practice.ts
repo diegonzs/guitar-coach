@@ -245,7 +245,7 @@ export class PracticeRun {
       // recording
       if (this.cfg.record !== false && audio.mic) {
         const withVideo = this.cfg.mode === "camera" && settings.saveVideo && !!this.cfg.videoStream;
-        const stream = withVideo ? new MediaStream([...this.cfg.videoStream!.getVideoTracks(), ...audio.mic.getAudioTracks()]) : audio.mic;
+        const stream = new MediaStream([...(withVideo ? this.cfg.videoStream!.getVideoTracks() : []), ...audio.recordingTracks()]);
         this.recorder = new Recorder();
         if (!this.recorder.start(stream, withVideo)) this.recorder = null;
       }

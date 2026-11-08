@@ -26,8 +26,10 @@ function useObjectUrl(blob: Blob | undefined) {
 
 function Media({ sessionId, name, type, online }: { sessionId: string; name: string; type: string; online: boolean }) {
   const files = useSessionFiles(sessionId);
-  const local = files?.find((f) => f.name === name)?.blob;
-  const localUrl = useObjectUrl(local);
+  const f = files?.find((f) => f.name === name);
+  // once uploaded, prefer the server copy (it may have been repaired there); local otherwise
+  const useLocal = !!f && (!f.uploaded || !online);
+  const localUrl = useObjectUrl(useLocal ? f.blob : undefined);
   const src = localUrl ?? (online ? `/api/sessions/${encodeURIComponent(sessionId)}/files/${encodeURIComponent(name)}` : null);
   if (!src) return <p className="text-xs text-muted-foreground">Disponible cuando te conectes al servidor.</p>;
   if (type.startsWith("video")) return <video src={src} controls playsInline className="w-full rounded-xl bg-black" />;
