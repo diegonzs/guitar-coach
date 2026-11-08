@@ -5,8 +5,8 @@ dist/
 .env*
 
 # Personal data — never published
-curriculum/
-data/
+/curriculum/
+/data/
 
 # Downloaded at setup time
 app/public/models/

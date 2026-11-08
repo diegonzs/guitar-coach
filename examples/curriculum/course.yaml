@@ -1,0 +1,31 @@
+# Curso de ejemplo de guitar-coach. Copia esta carpeta a ./curriculum y adáptala,
+# o pide a tu LLM que genere uno nuevo siguiendo docs/llm-guide.md.
+title: Guitarra clásica fingerstyle
+description: >
+  Del primer arpegio a tocar arreglos sencillos con melodía y bajo, en guitarra
+  de cuerdas de nylon.
+goal:
+  title: Tocar un arreglo fingerstyle completo
+  description: Melodía, bajo y armonía a la vez, como en los arreglos de música de videojuegos y películas.
+  level: 4
+units:
+  - id: fundamentos
+    title: Fundamentos
+    level: 1
+    description: Postura, mano derecha (p-i-m-a), cuerdas al aire y primeros arpegios.
+  - id: independencia
+    title: Independencia de manos
+    level: 2
+    description: Cambios de acorde, primeras melodías y bajo con el pulgar.
+  - id: primeros-arreglos
+    title: Primeros arreglos
+    level: 3
+    description: Melodía y bajo a la vez, cejilla y ligados.
+  - id: intermedio
+    title: Intermedio
+    level: 4
+    description: Trémolo, armónicos, cambios de posición y piezas completas.
+dailyRoutine:
+  - { kind: tuner, title: Afinar y calentar, minutes: 5 }
+  - { kind: lesson, title: Lección del día, minutes: 15 }
+  - { kind: free, title: Toca lo que quieras, minutes: 10 }
