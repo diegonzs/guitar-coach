@@ -203,6 +203,36 @@
         ]
       }
     },
+    "extraOnsets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "t": {
+            "type": "number"
+          },
+          "midi": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "t",
+          "midi"
+        ]
+      }
+    },
+    "timingToleranceMs": {
+      "type": "number"
+    },
     "posture": {
       "default": [],
       "type": "array",

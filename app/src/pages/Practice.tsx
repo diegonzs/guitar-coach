@@ -93,24 +93,26 @@ function fmtTime(sec: number) {
   return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
-function NoteChips({ st }: { st: PracticeState }) {
+function NoteChips({ st, tol = 70 }: { st: PracticeState; tol?: number }) {
   return (
     <div className="flex justify-center gap-1.5">
       {st.recent.slice(-6).map((n, i) => {
         const expected = n.expected.length === 1 ? n.expected[0] : null;
         const label = n.detected !== null ? midiToName(n.detected) : "—";
         const isFree = !n.expected.length;
+        const offBeat = !isFree && n.hit && n.deviationMs !== null && Math.abs(n.deviationMs) > tol;
         return (
           <span
             key={`${n.rep}-${n.event}-${i}`}
             className={cn(
               "w-[46px] rounded-xl border bg-card py-1.5 text-center font-mono text-[13px] font-semibold",
-              !isFree && n.hit && "border-success/40 text-success",
+              !isFree && n.hit && !offBeat && "border-success/40 text-success",
+              offBeat && "border-warning/50 bg-warning/10 text-warning",
               !isFree && !n.hit && "border-destructive/50 bg-destructive/10 text-destructive",
             )}
           >
             {n.hit && expected !== null && expected !== undefined ? midiToName(expected) : label}
-            <small className="block text-[9.5px] font-medium text-muted-foreground">{!isFree && !n.hit && expected ? `era ${midiToName(expected)}` : n.finger ?? (n.deviationMs !== null ? `${n.deviationMs > 0 ? "+" : ""}${n.deviationMs}` : "")}</small>
+            <small className="block text-[9.5px] font-medium text-muted-foreground">{!isFree && !n.hit && expected ? `era ${midiToName(expected)}` : offBeat ? `${n.deviationMs! > 0 ? "tarde +" : "antes −"}${Math.abs(n.deviationMs!)}` : n.finger ?? (n.deviationMs !== null ? `${n.deviationMs > 0 ? "+" : ""}${n.deviationMs}` : "")}</small>
           </span>
         );
       })}
@@ -420,7 +422,7 @@ export default function Practice() {
         {countIn !== null && <p className="text-center text-sm text-muted-foreground">Prepárate… empieza en el 1</p>}
         <div>
           <div className="eyebrow mb-2 text-center">Últimas notas</div>
-          <NoteChips st={st} />
+          <NoteChips st={st} tol={exercise?.timingToleranceMs} />
         </div>
         {!free && (
           <Card className="gap-2.5 px-4 py-3">

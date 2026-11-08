@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "wouter";
 import { ChevronLeft, CloudOff, Hand, RotateCcw, Target, TrendingUp, CircleCheck, Sparkles } from "lucide-react";
-import { CHECK_LABELS, LEVEL_NAMES, midiToName, type Check, type Session } from "@guitar-coach/core";
+import { CHECK_LABELS, LEVEL_NAMES, diagnose, midiToName, type Check, type Session } from "@guitar-coach/core";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { StatTile, TimingBars } from "@/components/viz";
+import { DiagnosisView } from "@/components/Diagnosis";
 import { isFullSession, useCurriculum, useSession, useSessionFiles } from "@/lib/data";
 import { updateLocalSession } from "@/lib/db";
 import { syncNow, useSync } from "@/lib/sync";
@@ -46,6 +47,13 @@ export default function SessionSummary() {
   const lesson = curriculum?.lessons.find((l) => l.id === s?.lesson?.id);
   const exercise = lesson?.exercises.find((e) => e.id === s?.exercise?.id);
   const deviations = useMemo(() => full?.notes.map((n) => (n.hit ? n.deviationMs : null)) ?? [], [full]);
+  const diagnosis = useMemo(
+    () =>
+      full && exercise && full.notes.length
+        ? diagnose(exercise.music, full.notes, { toleranceMs: full.timingToleranceMs ?? exercise.timingToleranceMs, extraOnsets: full.extraOnsets })
+        : null,
+    [full, exercise],
+  );
 
   if (row === undefined) return null;
   if (!s) return <p className="py-16 text-center text-sm text-muted-foreground">No encontré esa sesión.</p>;
@@ -156,10 +164,17 @@ export default function SessionSummary() {
         </Card>
       )}
 
+      {diagnosis && exercise && (
+        <>
+          <span className="eyebrow mt-1">Nota por nota</span>
+          <DiagnosisView music={exercise.music} fingers={exercise.fingers} diagnosis={diagnosis} />
+        </>
+      )}
+
       {(sm.problemNotes.length > 0 || posture.length > 0 || exercise) && s.kind === "exercise" && (
         <Card className="gap-2.5 px-4 py-3">
           <span className="text-sm font-semibold">Para revisar</span>
-          {sm.problemNotes.map((p) => (
+          {!diagnosis && sm.problemNotes.map((p) => (
             <div key={p.midi} className="flex items-start gap-2.5 text-[13px]">
               <span className="grid size-6 shrink-0 place-items-center rounded-md bg-destructive/15 text-destructive">
                 <Target className="size-3.5" />

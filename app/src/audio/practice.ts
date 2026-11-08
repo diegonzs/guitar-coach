@@ -9,6 +9,7 @@ import {
   expectedForRep,
   isClickEcho,
   midiToName,
+  noteVerdict,
   repLength,
   secondsPerQuarter,
   summarize,
@@ -18,6 +19,7 @@ import {
   type RepResult,
   type Session,
   type SessionFile,
+  type Verdict,
 } from "@guitar-coach/core";
 import { audio } from "./engine";
 import { Metronome } from "./metronome";
@@ -49,6 +51,8 @@ export interface PracticeState {
   /** Per event index of the current rep: "hit" | "miss" | undefined */
   repStates: (string | undefined)[];
   recent: NoteResult[];
+  /** How the most recent expected note went, for live feedback. */
+  lastVerdict: { verdict: Verdict; deviationMs: number | null; detected: number | null; expected: number[]; at: number } | null;
   lastHeard: { midi: number | null; t: number } | null;
   hits: number;
   total: number;
@@ -103,6 +107,7 @@ export class PracticeRun {
     cursor: -1,
     repStates: [],
     recent: [],
+    lastVerdict: null,
     lastHeard: null,
     hits: 0,
     total: 0,
@@ -316,9 +321,12 @@ export class PracticeRun {
       this.repDevs.push(n.deviationMs);
     }
     const states = [...this.state.repStates];
-    if (n.rep === this.state.rep || this.state.rep === n.rep + 1) states[n.event] = n.hit ? "hit" : "miss";
+    const verdict = noteVerdict(n, this.cfg.exercise?.timingToleranceMs ?? 70);
+    // green = right note on time, amber = right note but early/late, red = wrong or not heard
+    if (n.rep === this.state.rep || this.state.rep === n.rep + 1) states[n.event] = verdict === "ok" ? "hit" : verdict === "early" || verdict === "late" ? "off" : "miss";
     this.set({
       recent: [...this.state.recent.slice(-7), n],
+      lastVerdict: { verdict, deviationMs: n.deviationMs, detected: n.detected, expected: n.expected, at: n.t },
       hits: this.state.hits + (n.hit ? 1 : 0),
       total: this.state.total + 1,
       meanDevMs: this.devN ? Math.round(this.devSum / this.devN) : null,
@@ -517,6 +525,7 @@ export class PracticeRun {
       latencyMs: Math.round(this.latency * 1000),
       reps,
       notes,
+      ...(this.matcher ? { extraOnsets: this.matcher.extraOnsets, timingToleranceMs: ex?.timingToleranceMs } : {}),
       posture: this.postureEvents,
       cues: this.allCues.map((c) => ({ t: round3(c.t), level: c.level, message: c.detail ? `${c.title}. ${c.detail}` : c.title })),
       summary,

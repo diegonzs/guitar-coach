@@ -3,6 +3,7 @@ export * from "./alphatex.ts";
 export * from "./lesson.ts";
 export * from "./session.ts";
 export * from "./scoring.ts";
+export * from "./diagnosis.ts";
 export * from "./dsp/fft.ts";
 export * from "./dsp/pitch.ts";
 export * from "./dsp/onsets.ts";

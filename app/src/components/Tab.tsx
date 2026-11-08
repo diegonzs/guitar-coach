@@ -8,6 +8,8 @@ interface TabProps {
   cursor?: number;
   /** Per event index: "hit" | "miss" | "now" */
   states?: (string | undefined)[];
+  /** Per event index: short text under the note (e.g. "+120" ms, a note name, "?"). */
+  labels?: (string | undefined)[];
   /** Pixels per quarter note at minimum. */
   minQuarter?: number;
   className?: string;
@@ -20,7 +22,7 @@ const LEFT = 22;
 const RIGHT = 6;
 
 /** Guitar tablature that wraps into systems of whole bars to fit its container. */
-export function Tab({ music, fingers, cursor, states, minQuarter = 34, className, background }: TabProps) {
+export function Tab({ music, fingers, cursor, states, labels, minQuarter = 34, className, background }: TabProps) {
   const ref = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(320);
   useEffect(() => {
@@ -38,7 +40,9 @@ export function Tab({ music, fingers, cursor, states, minQuarter = 34, className
   const systems: number[][] = [];
   for (let b = 0; b < bars; b += perSystem) systems.push(Array.from({ length: Math.min(perSystem, bars - b) }, (_, i) => b + i));
   const hasFingers = !!fingers?.some(Boolean);
-  const H = TOP + GAP * 5 + (hasFingers ? 24 : 10);
+  const hasLabels = !!labels?.some(Boolean);
+  const LABEL_Y = TOP + GAP * 5 + (hasFingers ? 33 : 16);
+  const H = TOP + GAP * 5 + (hasFingers ? 24 : 10) + (hasLabels ? 16 : 0);
 
   return (
     <div ref={ref} className={className} style={background ? ({ "--tab-bg": background } as React.CSSProperties) : undefined}>
@@ -90,6 +94,11 @@ export function Tab({ music, fingers, cursor, states, minQuarter = 34, className
                   {hasFingers && fingers?.[e.index] && (
                     <text className={`tab-f ${st}`} x={cx} y={TOP + GAP * 5 + 17}>
                       {fingers[e.index]}
+                    </text>
+                  )}
+                  {labels?.[e.index] && (
+                    <text className={`tab-l ${st}`} x={cx} y={LABEL_Y}>
+                      {labels[e.index]}
                     </text>
                   )}
                 </g>

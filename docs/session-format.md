@@ -36,6 +36,8 @@ data/
     "expected": [60], "detected": 59,        // MIDI; detected null = no sonó
     "hit": false, "deviationMs": -12, "finger": "m"
   }],
+  "extraOnsets": [{ "t": 3.71, "midi": 57 }], // sonidos que no casaron con ninguna nota (opcional)
+  "timingToleranceMs": 70,       // tolerancia por nota usada (opcional)
   "posture": [{ "t": 41.2, "check": "posture.rightWrist", "value": 38.5, "message": "…", "frame": "frame-03.jpg" }],
   "cues":    [{ "t": 42.0, "level": "warn", "message": "Endereza la muñeca derecha. …" }],
   "summary": {
@@ -74,7 +76,7 @@ data/
 |---|---|---|
 | GET | `/api/health` | estado y hash del currículo |
 | GET | `/api/curriculum` | currículo validado (ETag) |
-| GET | `/api/sessions` | lista (sin `notes`/`posture`/`cues`/`reps`) |
+| GET | `/api/sessions` | lista (sin `notes`/`posture`/`cues`/`reps`/`extraOnsets`) |
 | GET/PUT | `/api/sessions/:id` | sesión completa (PUT idempotente) |
 | GET/PUT | `/api/sessions/:id/files/:name` | medios |
 | GET/PUT | `/api/profile` | perfil (gana el `updatedAt` más reciente) |

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "reac
 import { Link, useLocation } from "wouter";
 import { toast } from "sonner";
 import { ChevronLeft, CircleCheck, CircleX, ClipboardCheck, Mic, SkipForward, Square } from "lucide-react";
-import { gradeAssessment, LEVEL_NAMES, taskPassed, beatsPerBar, type AssessmentResult, type AssessmentTask, type Session, type TaskOutcome } from "@guitar-coach/core";
+import { diagnose, gradeAssessment, LEVEL_NAMES, taskPassed, beatsPerBar, type AssessmentResult, type Diagnosis, type AssessmentTask, type Session, type TaskOutcome } from "@guitar-coach/core";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Tab } from "@/components/Tab";
 import { Beats } from "@/components/viz";
+import { DiagnosisView, LiveVerdict } from "@/components/Diagnosis";
 import { useCurriculum } from "@/lib/data";
 import { saveLocalSession, saveProfile } from "@/lib/db";
 import { syncNow } from "@/lib/sync";
@@ -36,6 +37,8 @@ export default function Assessment() {
   const [files, setFiles] = useState<{ name: string; blob: Blob }[]>([]);
   const [run, setRun] = useState<PracticeRun | null>(null);
   const [last, setLast] = useState<TaskOutcome | null>(null);
+  /** Why the last attempt went the way it did, note by note. */
+  const [diag, setDiag] = useState<Diagnosis | null>(null);
   const [startedAt] = useState(() => new Date());
   const [result, setResult] = useState<AssessmentResult | null>(null);
   const [saving, setSaving] = useState(false);
@@ -73,6 +76,7 @@ export default function Assessment() {
   function advance(list: TaskOutcome[]) {
     currentRun.current = null;
     setLast(null);
+    setDiag(null);
     setRun(null);
     if (consecutiveFails(list) >= a!.stopAfterFailures || idx + 1 >= a!.exercises.length) {
       setResult(gradeAssessment(a!, list, curriculum!.lessons, answers));
@@ -85,6 +89,7 @@ export default function Assessment() {
     primeSpeech();
     await audio.ensureContext().catch(() => {});
     setLast(null);
+    setDiag(null);
     const r: PracticeRun = new PracticeRun({
       kind: "assessment",
       mode: "audio",
@@ -97,6 +102,7 @@ export default function Assessment() {
         if (currentRun.current !== r) return;
         currentRun.current = null;
         const passed = taskPassed(task, session.summary);
+        setDiag(diagnose(task.music, session.notes, { toleranceMs: task.timingToleranceMs, extraOnsets: session.extraOnsets }));
         record({ id: task.id, status: passed ? "passed" : "failed", accuracy: session.summary.accuracy, meanAbsDeviationMs: session.summary.meanAbsDeviationMs, bpm: task.tempo.start });
         const rec = f.find((x) => x.name.startsWith("grabacion."));
         if (rec) setFiles((prev) => [...prev.filter((x) => !x.name.startsWith(`prueba-${task.id}.`)), { name: `prueba-${task.id}.${rec.name.split(".").pop()}`, blob: rec.blob }]);
@@ -313,9 +319,11 @@ export default function Assessment() {
       </div>
       <h1 className="display text-[30px] leading-tight">{task.title}</h1>
       {task.instructions && <p className="text-sm text-muted-foreground">{task.instructions}</p>}
-      <Card className="p-3">
-        <Tab music={task.music} fingers={task.fingers} cursor={running && st.phase === "running" ? st.cursor : undefined} states={running ? st.repStates : undefined} />
-      </Card>
+      {!(last && diag && !running) && (
+        <Card className="p-3">
+          <Tab music={task.music} fingers={task.fingers} cursor={running && st.phase === "running" ? st.cursor : undefined} states={running ? st.repStates : undefined} />
+        </Card>
+      )}
       <p className="text-xs text-muted-foreground">
         Se toca {task.reps} {task.reps === 1 ? "vez" : "veces seguidas"} después de un compás de cuenta. Para pasar: {Math.round(task.pass.accuracy * 100)}% de notas correctas y desfase medio menor a {task.pass.timingMs} ms.
       </p>
@@ -325,6 +333,7 @@ export default function Assessment() {
           <span className="display text-7xl text-primary">{st.countIn ?? (st.beatInBar >= 0 ? st.beatInBar + 1 : "·")}</span>
           <Beats count={bpb} active={st.beatInBar} />
           <span className="text-sm text-muted-foreground">{st.phase === "countin" ? "Prepárate…" : `Repetición ${Math.min(st.rep + 1, task.reps)} de ${task.reps}`}</span>
+          {st.phase === "running" && <LiveVerdict v={st.lastVerdict} />}
         </div>
       )}
 
@@ -336,12 +345,30 @@ export default function Assessment() {
           <div className="text-sm">
             <b>{last.status === "passed" ? "¡Superada!" : last.status === "skipped" ? "Saltada" : "Todavía no"}</b>
             {last.accuracy !== null && (
-              <div className="text-muted-foreground">
-                {Math.round(last.accuracy * 100)}% notas correctas · desfase {last.meanAbsDeviationMs ?? "–"} ms
+              <div className="mt-0.5 flex flex-col text-muted-foreground">
+                <span>
+                  {Math.round(last.accuracy * 100)}% notas correctas{" "}
+                  {last.accuracy >= task.pass.accuracy ? <span className="text-success">✓</span> : <span className="text-destructive">· necesitas {Math.round(task.pass.accuracy * 100)}%</span>}
+                </span>
+                <span>
+                  {last.meanAbsDeviationMs === null ? "sin notas a tiempo para medir" : `desfase medio ${last.meanAbsDeviationMs} ms`}{" "}
+                  {last.meanAbsDeviationMs !== null && last.meanAbsDeviationMs <= task.pass.timingMs ? (
+                    <span className="text-success">✓</span>
+                  ) : (
+                    <span className="text-destructive">· máximo {task.pass.timingMs} ms</span>
+                  )}
+                </span>
               </div>
             )}
           </div>
         </Card>
+      )}
+
+      {last && diag && !running && (
+        <>
+          <span className="eyebrow mt-1">{last.status === "passed" ? "Detalle nota por nota" : "Por qué no pasó"}</span>
+          <DiagnosisView music={task.music} fingers={task.fingers} diagnosis={diag} />
+        </>
       )}
 
       <div className="mt-auto mb-2 grid gap-2">

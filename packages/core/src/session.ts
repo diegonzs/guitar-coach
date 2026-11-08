@@ -106,6 +106,10 @@ export const SessionSchema = z.object({
   latencyMs: z.number().default(0),
   reps: z.array(RepResultSchema).default([]),
   notes: z.array(NoteResultSchema).default([]),
+  /** Onsets that matched no expected note (seconds from the first beat). */
+  extraOnsets: z.array(z.object({ t: z.number(), midi: z.number().int().nullable() })).optional(),
+  /** Per-note timing tolerance used for this session, in ms. */
+  timingToleranceMs: z.number().optional(),
   posture: z.array(PostureEventSchema).default([]),
   cues: z.array(CueSchema).default([]),
   summary: SummarySchema,
@@ -119,10 +123,10 @@ export const SessionSchema = z.object({
 export type Session = z.infer<typeof SessionSchema>;
 
 /** Light version used in lists, sync and progress charts. */
-export type SessionListItem = Omit<Session, "notes" | "posture" | "cues" | "reps">;
+export type SessionListItem = Omit<Session, "notes" | "posture" | "cues" | "reps" | "extraOnsets">;
 
 export function toListItem(s: Session): SessionListItem {
-  const { notes: _n, posture: _p, cues: _c, reps: _r, ...rest } = s;
+  const { notes: _n, posture: _p, cues: _c, reps: _r, extraOnsets: _x, ...rest } = s;
   return rest;
 }
 

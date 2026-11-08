@@ -112,6 +112,8 @@ export class TimelineMatcher {
   readonly results: NoteResult[] = [];
   readonly reps: RepResult[] = [];
   extras = 0;
+  /** Onsets that matched no expected note (for diagnosing notes played far off the beat). */
+  readonly extraOnsets: { t: number; midi: number | null }[] = [];
   private repBuffer = new Map<number, NoteResult[]>();
 
   constructor(
@@ -150,7 +152,10 @@ export class TimelineMatcher {
     const horizon = this.pending[0] ? this.pending[0].t - this.pending[0].window : now;
     this.onsets = this.onsets.filter((o) => {
       if (o.t < horizon) {
-        if (!o.used && o.t > -0.3) this.extras++;
+        if (!o.used && o.t > -0.3) {
+          this.extras++;
+          this.extraOnsets.push({ t: round3(o.t), midi: o.midi });
+        }
         return false;
       }
       return true;
@@ -161,6 +166,8 @@ export class TimelineMatcher {
   flush(now: number) {
     while (this.pending.length && this.pending[0]!.t - this.pending[0]!.window < now) this.finalize(this.pending.shift()!);
     this.pending = [];
+    for (const o of this.onsets) if (!o.used && o.t > -0.3) this.extraOnsets.push({ t: round3(o.t), midi: o.midi });
+    this.onsets = [];
   }
 
   private finalize(ev: ExpectedEvent) {

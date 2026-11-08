@@ -164,6 +164,10 @@
   .tab-f { font: italic 400 13px var(--font-serif); fill: var(--muted-foreground); text-anchor: middle; }
   .tab-n.hit, .tab-f.hit { fill: var(--success); }
   .tab-n.miss, .tab-f.miss { fill: var(--destructive); }
+  .tab-n.off, .tab-f.off { fill: var(--warning); }
+  .tab-l { font: 600 9.5px var(--font-mono); text-anchor: middle; fill: var(--muted-foreground); }
+  .tab-l.miss { fill: var(--destructive); }
+  .tab-l.off { fill: var(--warning); }
   .tab-n.now, .tab-f.now { fill: var(--primary); }
   .tab-cur { fill: var(--primary); fill-opacity: 0.14; stroke: var(--primary); stroke-opacity: 0.5; }
 
