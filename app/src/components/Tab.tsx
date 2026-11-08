@@ -70,6 +70,22 @@ export function Tab({ music, fingers, cursor, states, statesRep, playhead, label
   for (let b = 0; b < bars; b += perSystem) systems.push(Array.from({ length: Math.min(perSystem, bars - b) }, (_, i) => b + i));
   const hasFingers = !!fingers?.some(Boolean);
   const playable = music.events.filter((e) => !e.rest);
+  /**
+   * How long each note keeps sounding (quarter position where its trail ends): until
+   * the same string is plucked again or the bar ends, whichever is first. That's how
+   * fingerstyle sounds: a bass note rings under the melody, arpeggios let ring.
+   */
+  const ringEnd = (() => {
+    const m = new Map<string, number>();
+    for (const e of playable) {
+      const barEnd = Math.min(music.length, music.events.find((o) => o.bar === e.bar + 1)?.start ?? (e.bar + 1) * barLen);
+      for (const n of e.notes) {
+        const again = playable.find((o) => o.start > e.start && o.notes.some((x) => x.string === n.string));
+        m.set(`${e.index}:${n.string}`, Math.max(e.start + e.duration, Math.min(barEnd, again?.start ?? Infinity)));
+      }
+    }
+    return m;
+  })();
   const hasLabels = !!labels?.some(Boolean);
   const LABEL_Y = TOP + GAP * 5 + (hasFingers ? 33 : 16);
   const H = TOP + GAP * 5 + (hasFingers ? 24 : 10) + (hasLabels ? 16 : 0);
@@ -122,14 +138,14 @@ export function Tab({ music, fingers, cursor, states, statesRep, playhead, label
               evs.map((e) => {
                 if (e.rest || e.start > pos + 0.001) return null;
                 const from = x(e.start);
-                const stop = Math.max(from + 4, x(e.start + e.duration) - 7);
-                const head = Math.min(x(pos), stop);
                 const st = liveStates?.[e.index] ?? "pending";
-                const ringing = x(pos) < stop;
                 return (
                   <g key={`t${e.index}`} className={`tab-trail ${st}`}>
                     {e.notes.map((n) => {
                       const y = TOP + (n.string - 1) * GAP;
+                      const stop = Math.max(from + 4, x(ringEnd.get(`${e.index}:${n.string}`) ?? e.start + e.duration) - 7);
+                      const head = Math.min(x(pos), stop);
+                      const ringing = x(pos) < stop;
                       return (
                         <g key={n.string}>
                           <line x1={from} x2={head} y1={y} y2={y} />

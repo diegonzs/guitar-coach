@@ -132,6 +132,12 @@ Los efectos de articulación (`h`, `p`, `sl`, `v`, `lf`, `rf`, `nh`…) se acept
 todavía no los evalúa. `\tempo` se ignora: manda `tempo.start`. No se admiten notas muertas (`x`)
 porque no se pueden evaluar.
 
+**Cuánto suena cada nota en pantalla.** La tablatura es de una sola voz, así que la duración
+de un golpe es solo la distancia hasta el siguiente. Al practicar, cada nota dibuja una estela
+que dura hasta que **se vuelve a tocar la misma cuerda o termina el compás** (lo que llegue
+antes): así un bajo suena bajo la melodía y los arpegios se dejan sonar, como en fingerstyle.
+No hace falta escribir nada especial para eso.
+
 > **Derechos de autor:** usa melodías de dominio público o tus propios ejercicios. No copies
 > arreglos ajenos en un repositorio público; el currículo personal (`curriculum/`) no se publica.
 
