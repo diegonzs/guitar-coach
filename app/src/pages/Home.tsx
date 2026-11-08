@@ -12,7 +12,7 @@ import { SyncBadge } from "@/components/SyncBadge";
 import { currentLesson, useCurriculum, useLessonProgress, useProfile, useSessions } from "@/lib/data";
 import { isIOS, isStandalone } from "@/lib/device";
 import { cn } from "@/lib/utils";
-import { tunerMinutesToday } from "@/lib/tuner-usage";
+import { tunerMinutesToday, warmupDoneToday } from "@/lib/tuner-usage";
 
 const DAYS = ["L", "M", "M", "J", "V", "S", "D"];
 
@@ -57,10 +57,14 @@ export function Home() {
     { kind: "lesson" as const, title: "Lección del día", minutes: 15 },
     { kind: "free" as const, title: "Toca lo que quieras", minutes: 10 },
   ];
-  const doneMin = (kind: string) => (kind === "tuner" ? tunerMinutesToday() : kind === "lesson" ? todayMin.lesson : kind === "free" ? todayMin.free : 0);
+  // The warm-up is done when the guitar was tuned today (or after its minutes in the tuner),
+  // and it's behind you anyway once you've started practising: never send you back to it.
+  const warmupDone = (minutes: number) => warmupDoneToday(minutes) || todayMin.lesson + todayMin.free > 0;
+  const doneMin = (r: { kind: string; minutes: number }) =>
+    r.kind === "tuner" ? (warmupDone(r.minutes) ? r.minutes : tunerMinutesToday()) : r.kind === "lesson" ? todayMin.lesson : r.kind === "free" ? todayMin.free : 0;
   const totalMin = routine.reduce((a, r) => a + r.minutes, 0);
-  const totalDone = routine.reduce((a, r) => a + Math.min(r.minutes, doneMin(r.kind)), 0);
-  const nextItem = routine.find((r) => doneMin(r.kind) < r.minutes);
+  const totalDone = routine.reduce((a, r) => a + Math.min(r.minutes, doneMin(r)), 0);
+  const nextItem = routine.find((r) => doneMin(r) < r.minutes);
 
   const lp = lesson ? progress.get(lesson.id) : undefined;
   const nextExercise = lesson && lp ? lesson.exercises.find((e) => !lp.exercises.find((x) => x.exerciseId === e.id)?.mastered) ?? lesson.exercises[0] : lesson?.exercises[0];
@@ -140,7 +144,7 @@ export function Home() {
         <Progress value={(totalDone / totalMin) * 100} className="mt-2.5 h-1.5" />
         <ol className="my-3 flex flex-col gap-0.5">
           {routine.map((r, i) => {
-            const done = doneMin(r.kind) >= r.minutes;
+            const done = doneMin(r) >= r.minutes;
             const now = r === nextItem;
             const detail = r.kind === "lesson" && lesson ? `${lesson.title}${nextExercise ? ` · ${nextExercise.title}` : ""}` : `${r.minutes} min`;
             return (

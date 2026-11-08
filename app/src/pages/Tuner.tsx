@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { Volume2 } from "lucide-react";
+import { ArrowRight, Check, Volume2 } from "lucide-react";
+import { Link } from "wouter";
 import { centsOff, detectPitch, midiToFreq, OPEN_STRINGS, pluck, pitchClassName } from "@guitar-coach/core";
-import { addTunerTime } from "@/lib/tuner-usage";
+import { addTunerTime, markStringTuned, tunedStringsToday } from "@/lib/tuner-usage";
 import { Button } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { audio } from "@/audio/engine";
@@ -51,7 +52,7 @@ export default function Tuner() {
   const [mode, setMode] = useState<"auto" | "manual">("auto");
   const [target, setTarget] = useState<number | null>(null);
   const [reading, setReading] = useState<{ midi: number; cents: number; freq: number } | null>(null);
-  const [tuned, setTuned] = useState<Set<number>>(new Set());
+  const [tuned, setTuned] = useState<Set<number>>(() => new Set(tunedStringsToday()));
   const [error, setError] = useState<string | null>(null);
   const smooth = useRef<number | null>(null);
   const inTune = useRef(0);
@@ -61,7 +62,13 @@ export default function Tuner() {
     let buf = new Float32Array(4096);
     let filled = 0;
     let last = 0;
-    const started = Date.now();
+    // save the time as it goes: on iOS the app may be closed without unmounting
+    let since = Date.now();
+    const flush = () => {
+      addTunerTime((Date.now() - since) / 1000);
+      since = Date.now();
+    };
+    const saver = setInterval(flush, 5000);
     const off = audio.onBlock((b) => {
       // sliding window of the last 4096 samples
       if (filled + b.samples.length > buf.length) {
@@ -89,13 +96,17 @@ export default function Tuner() {
       setReading({ midi, cents, freq: f });
       const open = OPEN_STRINGS.find((s) => s.midi === midi);
       if (open && Math.abs(cents) <= 5) {
-        if (++inTune.current > 6) setTuned((t) => (t.has(open.string) ? t : new Set(t).add(open.string)));
+        if (++inTune.current > 6) {
+          markStringTuned(open.string);
+          setTuned((t) => (t.has(open.string) ? t : new Set(t).add(open.string)));
+        }
       } else inTune.current = 0;
     });
     return () => {
       off();
       buf = new Float32Array(0);
-      addTunerTime((Date.now() - started) / 1000);
+      clearInterval(saver);
+      flush();
     };
   }, [on, mode, target]);
 
@@ -166,7 +177,24 @@ export default function Tuner() {
               </button>
             ))}
           </div>
+          <div className="mt-2 text-center text-xs text-muted-foreground">
+            {tuned.size >= 6 ? (
+              <span className="font-medium text-success">
+                <Check className="mr-1 inline size-3.5" strokeWidth={3} />
+                Las 6 cuerdas afinadas hoy
+              </span>
+            ) : (
+              `${tuned.size} de 6 cuerdas afinadas hoy`
+            )}
+          </div>
         </div>
+        {tuned.size >= 6 && (
+          <Button asChild className="h-12">
+            <Link href="/">
+              Seguir con la práctica de hoy <ArrowRight className="size-4" />
+            </Link>
+          </Button>
+        )}
         {!on ? (
           <Button className="h-12" onClick={enable}>
             Activar micrófono
