@@ -419,15 +419,11 @@ export function buildCurriculum(files: SourceFile[]): Curriculum {
   lessons.sort((a, b) => a.level - b.level || unitIndex(course, a.unit) - unitIndex(course, b.unit) || a.order - b.order || a.id.localeCompare(b.id));
   notes.sort((a, b) => b.date.localeCompare(a.date));
 
-  return {
-    formatVersion: 1,
-    course,
-    lessons,
-    assessment,
-    notes,
-    issues,
-    hash: hashString(sorted.map((f) => f.path + "\0" + f.content).join("\0")),
-  };
+  // Hash what clients receive, not just the source files: if the parser changes (new
+  // features, fixes) the same files can produce a different curriculum, and clients must
+  // not keep a stale copy because the files' text didn't change.
+  const built = { formatVersion: 1 as const, course, lessons, assessment, notes, issues };
+  return { ...built, hash: hashString(JSON.stringify(built)) };
 }
 
 function unitIndex(course: Course | undefined, unit: string | undefined) {

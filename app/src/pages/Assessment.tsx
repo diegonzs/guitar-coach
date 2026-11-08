@@ -51,6 +51,17 @@ export default function Assessment() {
   useEffect(() => () => void run?.cancel(), [run]);
 
   if (curriculum === undefined) return null;
+  if (curriculum === null)
+    return (
+      <div className="grid min-h-dvh place-items-center p-6 text-center text-sm text-muted-foreground">
+        <div className="flex flex-col items-center gap-3">
+          Todavía no tengo tu currículo en este dispositivo. Se descarga al conectar con el servidor.
+          <Button variant="secondary" onClick={() => void syncNow()}>
+            Sincronizar ahora
+          </Button>
+        </div>
+      </div>
+    );
   if (!a)
     return (
       <div className="grid min-h-dvh place-items-center p-6 text-center text-sm text-muted-foreground">
