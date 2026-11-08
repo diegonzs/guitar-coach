@@ -1,13 +1,23 @@
 import { useEffect, useRef, useState } from "react";
 import type { ParsedMusic } from "@guitar-coach/core";
 
+/** Where the music is right now: repetition and position in quarter notes inside it. */
+export type Playhead = () => { rep: number; pos: number } | null;
+
 interface TabProps {
   music: ParsedMusic;
   fingers?: (string | undefined)[];
   /** Event index to highlight. */
   cursor?: number;
-  /** Per event index: "hit" | "miss" | "now" */
+  /** Per event index: "hit" | "off" | "miss" | "now" */
   states?: (string | undefined)[];
+  /** Repetition the `states` belong to (only applied while the playhead is in that rep). */
+  statesRep?: number;
+  /**
+   * Live position getter. When set, each note grows a "sustain trail" along its string
+   * while it should ring (rhythm-game style), coloured by how it was judged.
+   */
+  playhead?: Playhead;
   /** Per event index: short text under the note (e.g. "+120" ms, a note name, "?"). */
   labels?: (string | undefined)[];
   /** Pixels per quarter note at minimum. */
@@ -22,7 +32,7 @@ const LEFT = 22;
 const RIGHT = 6;
 
 /** Guitar tablature that wraps into systems of whole bars to fit its container. */
-export function Tab({ music, fingers, cursor, states, labels, minQuarter = 34, className, background }: TabProps) {
+export function Tab({ music, fingers, cursor, states, statesRep, playhead, labels, minQuarter = 34, className, background }: TabProps) {
   const ref = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(320);
   useEffect(() => {
@@ -32,6 +42,23 @@ export function Tab({ music, fingers, cursor, states, labels, minQuarter = 34, c
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
+
+  // animate the playhead at display rate, without re-rendering the parent
+  const [ph, setPh] = useState<{ rep: number; pos: number } | null>(null);
+  useEffect(() => {
+    if (!playhead) return setPh(null);
+    let raf = 0;
+    const loop = () => {
+      const p = playhead();
+      setPh((prev) => (p === null ? null : prev && prev.rep === p.rep && Math.abs(prev.pos - p.pos) < 0.004 ? prev : p));
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
+  }, [playhead]);
+  const pos = ph && ph.pos >= 0 ? ph.pos : null;
+  // judgements from another rep must not colour this one's trails
+  const liveStates = ph && statesRep !== undefined && ph.rep !== statesRep ? undefined : states;
 
   const barLen = (music.timeSignature[0] * 4) / music.timeSignature[1];
   const bars = Math.max(1, music.bars);
@@ -55,6 +82,7 @@ export function Tab({ music, fingers, cursor, states, labels, minQuarter = 34, c
         return (
           <svg key={si} viewBox={`0 0 ${width} ${H}`} width="100%" height={H} className="block overflow-visible" role="img" aria-label="Tablatura">
             {cursor !== undefined &&
+              !playhead &&
               evs
                 .filter((e) => e.index === cursor)
                 .map((e) => {
@@ -73,9 +101,34 @@ export function Tab({ music, fingers, cursor, states, labels, minQuarter = 34, c
               const bx = b === 0 ? LEFT - 6 : LEFT + (usable * b) / sys.length - 2;
               return <line key={b} className="tab-bar" x1={bx} x2={bx} y1={TOP} y2={TOP + GAP * 5} />;
             })}
+            {pos !== null && pos >= startQ && pos < startQ + sysLen && <line className="tab-ph" x1={x(pos)} x2={x(pos)} y1={TOP - 5} y2={TOP + GAP * 5 + 5} />}
+            {pos !== null &&
+              evs.map((e) => {
+                if (e.rest || e.start > pos + 0.001) return null;
+                const cx = x(e.start) + Math.min(12, ((e.duration / sysLen) * usable) / 2);
+                const end = Math.max(cx + 4, x(e.start + e.duration) - 5);
+                const f = Math.min(1, (pos - e.start) / e.duration);
+                const head = cx + (end - cx) * f;
+                const st = liveStates?.[e.index] ?? "pending";
+                const ringing = f < 1;
+                return (
+                  <g key={`t${e.index}`} className={`tab-trail ${st}`}>
+                    {e.notes.map((n) => {
+                      const y = TOP + (n.string - 1) * GAP;
+                      return (
+                        <g key={n.string}>
+                          <line x1={cx} x2={head} y1={y} y2={y} />
+                          {ringing && <circle className="tab-head" cx={head} cy={y} r={3.6} />}
+                        </g>
+                      );
+                    })}
+                  </g>
+                );
+              })}
             {evs.map((e) => {
               const cx = x(e.start) + Math.min(12, ((e.duration / sysLen) * usable) / 2);
-              const st = states?.[e.index] ?? (e.index === cursor ? "now" : "");
+              const active = pos !== null && !e.rest && pos >= e.start - 0.001 && pos < e.start + e.duration;
+              const st = liveStates?.[e.index] ?? (active || (!playhead && e.index === cursor) ? "now" : "");
               if (e.rest) return <text key={e.index} className="tab-f" x={cx} y={TOP + GAP * 2.7}>·</text>;
               return (
                 <g key={e.index}>

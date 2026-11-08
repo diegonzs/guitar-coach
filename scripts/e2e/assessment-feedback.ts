@@ -39,7 +39,11 @@ await page.getByRole("button", { name: "Empezar", exact: true }).click();
 await page.getByRole("button", { name: "Continuar a las pruebas" }).click();
 for (let task = 1; task <= 2; task++) {
   await page.getByRole("button", { name: "Empezar prueba" }).click();
-  await page.waitForTimeout(4500);
+  await page.waitForTimeout(4200);
+  for (let k = 0; k < 4; k++) {
+    await page.locator("svg[aria-label=Tablatura]").first().screenshot({ path: `${out}/fb-${task}-live-${k}.png` });
+    await page.waitForTimeout(450);
+  }
   await page.screenshot({ path: `${out}/fb-${task}-live.png` });
   await page.getByRole("button", { name: "Siguiente" }).waitFor({ timeout: 60000 });
   await page.screenshot({ path: `${out}/fb-${task}-result.png`, fullPage: true });

@@ -256,7 +256,7 @@ export default function Practice() {
   const title = exercise?.title ?? "Práctica libre";
   const needsCalib = exercise?.checks.includes("posture.leftThumb") && !settings.calibration;
   const tab = exercise && (
-    <Tab music={exercise.music} fingers={exercise.fingers} cursor={running && st.phase === "running" ? st.cursor : undefined} states={running ? st.repStates : undefined} />
+    <Tab music={exercise.music} fingers={exercise.fingers} cursor={running && st.phase === "running" ? st.cursor : undefined} states={running ? st.repStates : undefined} statesRep={st.rep} playhead={running ? run?.playhead : undefined} />
   );
 
   // ------------------------------------------------------------- setup

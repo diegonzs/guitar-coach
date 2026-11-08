@@ -321,7 +321,7 @@ export default function Assessment() {
       {task.instructions && <p className="text-sm text-muted-foreground">{task.instructions}</p>}
       {!(last && diag && !running) && (
         <Card className="p-3">
-          <Tab music={task.music} fingers={task.fingers} cursor={running && st.phase === "running" ? st.cursor : undefined} states={running ? st.repStates : undefined} />
+          <Tab music={task.music} fingers={task.fingers} cursor={running && st.phase === "running" ? st.cursor : undefined} states={running ? st.repStates : undefined} statesRep={st.rep} playhead={running ? run?.playhead : undefined} />
         </Card>
       )}
       <p className="text-xs text-muted-foreground">

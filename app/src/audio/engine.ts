@@ -80,6 +80,12 @@ class AudioEngine {
     return this.ctx?.currentTime ?? 0;
   }
 
+  /** Seconds between scheduling a sound and it leaving the speaker. */
+  outputDelay() {
+    const c = this.ctx as (AudioContext & { outputLatency?: number }) | null;
+    return c ? (c.outputLatency || 0) + (c.baseLatency || 0) : 0;
+  }
+
   /** Best guess of the round-trip latency before the user calibrates. */
   defaultLatencyMs() {
     const c = this.ctx as (AudioContext & { outputLatency?: number }) | null;

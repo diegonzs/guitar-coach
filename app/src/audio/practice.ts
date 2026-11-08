@@ -10,6 +10,7 @@ import {
   isClickEcho,
   midiToName,
   noteVerdict,
+  pitchMatches,
   repLength,
   secondsPerQuarter,
   summarize,
@@ -20,6 +21,8 @@ import {
   type Session,
   type SessionFile,
   type Verdict,
+  type Onset,
+  type ExpectedEvent,
 } from "@guitar-coach/core";
 import { audio } from "./engine";
 import { Metronome } from "./metronome";
@@ -176,6 +179,21 @@ export class PracticeRun {
     return audio.now() - this.latency - this.firstBeat;
   }
 
+  /**
+   * Where the music is for the eyes: in sync with the click as it is *heard*
+   * (output latency only), unlike `musicNow`, which also removes input latency.
+   */
+  playhead = (): { rep: number; pos: number } | null => {
+    const ex = this.cfg.exercise;
+    if (!ex || this.state.phase !== "running") return null;
+    const t = audio.now() - this.firstBeat - audio.outputDelay();
+    const rl = repLength(ex.music, this.cfg.bpm, this.beatUnit);
+    const maxReps = this.cfg.maxReps ?? (ex.loop ? Infinity : 1);
+    if (t < 0 || t >= rl * maxReps) return null;
+    const rep = Math.floor(t / rl);
+    return { rep, pos: (t - rep * rl) / secondsPerQuarter(this.cfg.bpm, this.beatUnit) };
+  };
+
   async start() {
     this.set({ phase: "starting" });
     try {
@@ -274,12 +292,35 @@ export class PracticeRun {
       if (isClickEcho(t, clicks, near)) return;
     }
     this.set({ lastHeard: { midi: o.midi, t } });
-    if (this.matcher) this.matcher.addOnset({ t, salience: o.salience, present: o.present, midi: o.midi });
+    if (this.matcher) {
+      const onset = { t, salience: o.salience, present: o.present, midi: o.midi };
+      this.matcher.addOnset(onset);
+      this.provisional(onset);
+    }
     else if (this.cfg.kind === "free" && o.midi !== null) {
       const n: NoteResult = { rep: 0, event: this.freeNotes.length, t: round3(t), expected: [], detected: o.midi, hit: true, deviationMs: null };
       this.freeNotes.push(n);
       this.set({ freeNotes: this.freeNotes.length, recent: [...this.state.recent.slice(-7), n] });
     }
+  }
+
+  /**
+   * Instant feedback: colour the note as soon as a clearly right pitch is heard near it.
+   * The matcher's final judgement (a few hundred ms later) still overrides it.
+   */
+  private provisional(o: Onset) {
+    const ex = this.cfg.exercise;
+    if (!ex) return;
+    const rl = repLength(ex.music, this.cfg.bpm, this.beatUnit);
+    const rep = Math.max(0, Math.floor((o.t + 0.25) / rl));
+    if (rep !== this.state.rep) return;
+    let best: ExpectedEvent | undefined;
+    for (const e of expectedForRep(ex.music, ex.fingers, rep, this.cfg.bpm, this.beatUnit))
+      if (Math.abs(e.t - o.t) <= e.window && (!best || Math.abs(e.t - o.t) < Math.abs(best.t - o.t))) best = e;
+    if (!best || this.state.repStates[best.event] || !pitchMatches(o, best.midis)) return;
+    const states = [...this.state.repStates];
+    states[best.event] = Math.abs(o.t - best.t) * 1000 <= ex.timingToleranceMs ? "hit" : "off";
+    this.set({ repStates: states });
   }
 
   private tick() {
